@@ -44,6 +44,9 @@ get_device() {
     # Load cached device information if config file exists
     if [[ -f "$SCANIMAGE_CONFIG" ]]; then
         source "$SCANIMAGE_CONFIG"      # Load cached device information
+    else
+        # Create dummy config file if it doesn't exist
+        echo 'scan_device="dummy"' > "$SCANIMAGE_CONFIG"
     fi
 
     # Try to use cached scanner device first (faster)
