@@ -67,7 +67,7 @@ copy_logs() {
 
     if [ "${DEBUG:-0}" -eq 0 ]; then
         # Copy everything except for debug messages
-        for file in "$SCRIPT_DIR"/../*.log; do
+        for file in "/var/logs/broodsense/*"; do
             filename=$(basename "$file")
             grep -vi "debug" "$file" > "$USB_PATH/$filename" || {
                 broodsense_log warning "Failed to copy log file '$file' to USB."
@@ -75,7 +75,7 @@ copy_logs() {
         done
     else
         # Copy everything (DEBUG mode)
-        cp "$SCRIPT_DIR"/../*.log "$USB_PATH" || {
+        cp "/var/logs/broodsense/*.log" "$USB_PATH" || {
             broodsense_log warning "Failed to copy log files to USB in DEBUG mode."
         }
     fi
