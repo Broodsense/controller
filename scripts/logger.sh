@@ -1,5 +1,5 @@
 
-# BroodSense Logging Utilities
+# BroodSense Logging Utils
 # ============================
 #
 # This script provides logging functions for the BroodSense controller system.
@@ -81,4 +81,3 @@ copy_logs() {
     fi
     return 0
 }
-
