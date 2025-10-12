@@ -1,0 +1,42 @@
+# This config file exposes scan settings
+
+# NOTE: Enquote values with spaces, e.g. "value with spaces".
+# NOTE: Blank lines or lines starting with # are ignored.
+# NOTE: Do not use spaces around the equal sign.
+
+# current_time (ISO format: YYYY-MM-DDTHH:MM:SS):
+# The device is not connected to the internet and cannot sync time automatically.
+# This value is used to manually set the device time on first boot.
+# An internal battery will keep the time for about 1 month, even
+# if the external power supply is disconnected. Boot the device shortly after
+# setting this value to ensure an approximate time setting, otherwise the other time values
+# will be incorrect. If no manual time sync is intended, comment this line with # symbol.
+# current_time="YYYY-MM-DDTHH:MM:SS"
+
+# study_start (ISO format: YYYY-MM-DDTHH:MM:SS):
+# No scan will be performed before study_start.
+study_start="{study_start}"
+
+# study_end (ISO format: YYYY-MM-DDTHH:MM:SS):
+# No scan will be performed after study_end.
+study_end="{study_end}"
+
+# resolution (dpi): Choose one of 300, 600, 1200, 2400. Recommended: 1200.
+scan_resolution={scan_resolution}
+
+# interval (min): Choose an arbitrary scan interval. Consider that a scan takes about
+# 2 minute (300dpi), 2 minutes (600dpi), 3 minutes (1200dpi), 10 minutes (2400dpi).
+scan_interval={scan_interval}
+
+# Scan area, either A4, A5-left or A5-right
+scan_area={scan_area}
+
+# Run in debug mode (no auto poweroff) by uncommenting following line
+# DEBUG=1
+
+# Perform code update (git pull) from either online repo (if internet is available)
+# or USB storage. For online updates, open a WiFi Hotspot with SSID "broodsense" and password "broodsense".
+# A connection is established automatically. Alternatively download the repo using "git clone --bare URL" and
+# save it in the root directory of your USB device (name: controller.git). (Only) if no internet connection is
+# available, the update is performed from this USB source. Uncomment the following line.
+# UPDATE=1
