@@ -40,7 +40,11 @@ get_device() {
     # Returns: Scanner device identifier string
 
     FROM_BUFFER="$1"                    # Whether to use cached device info
-    source "$SCANIMAGE_CONFIG"          # Load cached device information
+
+    # Load cached device information if config file exists
+    if [[ -f "$SCANIMAGE_CONFIG" ]]; then
+        source "$SCANIMAGE_CONFIG"      # Load cached device information
+    fi
 
     # Try to use cached scanner device first (faster)
     if [[ "$FROM_BUFFER" -eq 1 && -n "$scan_device" ]]; then
@@ -49,38 +53,38 @@ get_device() {
     fi
 
     # Perform fresh scanner detection with retry logic
-        retries=5
-        while (( retries >= 0 )); do
-            if ! scan_device=$(/usr/bin/scanimage -L 2>/dev/null) || [[ -z "$scan_device" ]] || grep -q "No scanners were identified" <<< "$scan_device"; then
-                if (( retries == 0 )); then
-                    broodsense_log error "Failed to list scan devices after multiple attempts. Is a scanner connected?"
-                    exit 1
-                else
-                    broodsense_log warning "Failed to list scan devices. Retrying in 10 seconds... ($retries retries left)"
-                    /usr/bin/sleep 10
-                    (( retries-- ))
-                fi
+    retries=5
+    while (( retries >= 0 )); do
+        if ! scan_device=$(/usr/bin/scanimage -L 2>/dev/null) || [[ -z "$scan_device" ]] || grep -q "No scanners were identified" <<< "$scan_device"; then
+            if (( retries == 0 )); then
+                broodsense_log error "Failed to list scan devices after multiple attempts. Is a scanner connected?"
+                exit 1
             else
-                # Parse scanner device from scanimage output
-                # Prefer airscan interfaces
-                airscan_device=$(echo "$scan_device" | grep airscan)
-                if [[ -n "$airscan_device" ]]; then
-                   # Extract airscan device identifier
-                   scan_device=$(echo "$airscan_device" | grep -oP "\`\K.*(?=')")
-                else
-                   # Use first available scanner device
-                   scan_device=$(echo "$scan_device" | head -n 1 | grep -oP "\`\K.*(?=')")
-                fi
-
-                # Update device cache file
-                sed -i '/^scan_device=/d' "$SCANIMAGE_CONFIG"    # Remove old entries
-                echo "scan_device=\"$scan_device\"" >> "$SCANIMAGE_CONFIG"  # Add new entry
-
-                broodsense_log debug "Scanner device detected and cached: $scan_device"
-                echo "$scan_device"
-                return 0
+                broodsense_log warning "Failed to list scan devices. Retrying in 10 seconds... ($retries retries left)"
+                /usr/bin/sleep 10
+                (( retries-- ))
             fi
-        done
+        else
+            # Parse scanner device from scanimage output
+            # Prefer airscan interfaces
+            airscan_device=$(echo "$scan_device" | grep airscan)
+            if [[ -n "$airscan_device" ]]; then
+                # Extract airscan device identifier
+                scan_device=$(echo "$airscan_device" | grep -oP "\`\K.*(?=')")
+            else
+                # Use first available scanner device
+                scan_device=$(echo "$scan_device" | head -n 1 | grep -oP "\`\K.*(?=')")
+            fi
+
+            # Update device cache file
+            sed -i '/^scan_device=/d' "$SCANIMAGE_CONFIG"    # Remove old entries
+            echo "scan_device=\"$scan_device\"" >> "$SCANIMAGE_CONFIG"  # Add new entry
+
+            broodsense_log debug "Scanner device detected and cached: $scan_device"
+            echo "$scan_device"
+            return 0
+        fi
+    done
 }
 
 scan() {
