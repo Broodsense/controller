@@ -38,16 +38,19 @@ source "$USB_CONFIG"
 # Create a new WittyPi schedule file
 SCHEDULE="$WITTY_DIR/schedule.wpi"
 
-# Schedule file format:
-#   BEGIN <start time>   : When study starts (ISO, T replaced by space)
-#   END <end time>       : When study ends (ISO, T replaced by space)
-#   ON M<minutes>        : Power ON every <scan_interval - 3> minutes (3 min offset for boot)
-#   OFF M1               : Power OFF after 1 minute (scan duration)
+# Scheduling Strategy:
+# The system powers on every <scan_interval> minutes to perform a scan cycle.
+# Normal operation: The script completes within the scan interval and powers
+# off the system automatically.
+# Failsafe mechanism: If the script runs longer than expected, the system will
+# force shutdown 20 seconds before the next scheduled power on to maintain the
+# scheduled rhythm.
+
 /usr/bin/cat > "$SCHEDULE" <<EOF
 BEGIN ${study_start//T/ }
 END ${study_end//T/ }
-ON M$((scan_interval - 3))
-OFF M1
+ON M$((scan_interval - 1)) S40
+OFF S20
 EOF
 
 /usr/bin/sleep 0.5 # Ensure no conflict with WittyPi's previous scheduler

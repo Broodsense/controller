@@ -63,12 +63,13 @@ if [[ "${DEBUG:-0}" -eq 1 && ( "${startup_reason:-0}" -eq 1 || "${startup_reason
     broodsense_log info "Debug flag (DEBUG=1) was unset, because startup was triggered by ALARM1 and would otherwise interfere with timed shutdown."
 fi
 
-# Maximum recommended scan intervals for each resolution in minutes
-declare -A max_interval
-max_interval[300]=4 # 2
-max_interval[600]=4 # 2
-max_interval[1200]=5 # 3
-max_interval[2400]=12 # 10
+# Minimum recommended scan intervals for each resolution in minutes
+# If going lower, the scan might not finish before next scheduled startup.
+declare -A min_interval
+min_interval[300]=4 # (cycle must finish in 3min40s)
+min_interval[600]=4 # (cycle must finish in 4min40s)
+min_interval[1200]=5 # (cycle must finish in 4min40s)
+min_interval[2400]=12 # (cycle must finish in 11min40s)
 
 # Validate scan_resolution
 if [[ "$scan_resolution" =~ ^(300|600|1200|2400)$ ]]; then
@@ -79,10 +80,10 @@ else
 fi
 
 # Validate scan_interval
-if [[ "$scan_interval" -ge "${max_interval[$scan_resolution]}" ]]; then
+if [[ "$scan_interval" -ge "${min_interval[$scan_resolution]}" ]]; then
     broodsense_log debug "Scan interval ($scan_interval) is valid."
 else
-    broodsense_log error "Invalid scan interval: Found $scan_interval, expected at least ${max_interval[$scan_resolution]}."
+    broodsense_log error "Invalid scan interval: Found $scan_interval, expected at least ${min_interval[$scan_resolution]}."
     VALID=0
 fi
 
