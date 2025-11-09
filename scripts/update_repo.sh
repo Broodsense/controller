@@ -48,7 +48,7 @@ if [[ -n "$USB_PATH" && -d "$USB_PATH" && -d "$USB_REPO" ]]; then
     broodsense_log debug "USB repository found at $USB_REPO - attempting offline update."
 
     # Perform git pull from USB bare repository
-    pull_output=$(sudo -u comb /usr/bin/git -C "$SCRIPT_DIR" pull "$USB_REPO" 2>&1 | /usr/bin/tr '\n' ' ')
+    pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull "$USB_REPO" 2>&1 | /usr/bin/tr '\n' ' ')
     if [ $? -eq 0 ]; then
         broodsense_log info "Successfully updated from USB repository (commit: $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)): $pull_output"
         exit 0
@@ -74,7 +74,7 @@ broodsense_log debug "Activating WiFi for online repository update."
 if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
     # Internet is available - attempt online update
     broodsense_log debug "Internet connectivity confirmed - pulling from online repository."
-    pull_output=$(sudo -u comb /usr/bin/git -C "$SCRIPT_DIR" pull 2>&1 | /usr/bin/tr '\n' ' ')
+    pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull 2>&1 | /usr/bin/tr '\n' ' ')
 
     if [ $? -eq 0 ]; then
         broodsense_log info "Successfully updated from online repository (commit: $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)): $pull_output"
