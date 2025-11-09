@@ -58,7 +58,7 @@ copy_logs() {
     source "$USB_PATH/config.env"
 
     # Remove existing logs on USB storage
-    find "$USB_PATH" -maxdepth 1 -type f -name "*.log" -exec rm {} \; 2>/dev/null || {
+    find "$USB_PATH" -maxdepth 1 -type f -name "*.log*" -exec rm {} \; 2>/dev/null || {
         broodsense_log warning "Failed to remove old log files from $USB_PATH."
     }
 
@@ -67,7 +67,7 @@ copy_logs() {
 
     if [ "${DEBUG:-0}" -eq 0 ]; then
         # Copy everything except for debug messages
-        for file in /var/log/broodsense/*.log; do
+        for file in /var/log/broodsense/*.log*; do
             if [[ -f "$file" ]]; then
                 filename=$(basename "$file")
                 grep -vi "debug" "$file" > "$USB_PATH/$filename" || {
@@ -77,7 +77,7 @@ copy_logs() {
         done
     else
         # Copy everything (DEBUG mode)
-        for file in /var/log/broodsense/*.log; do
+        for file in /var/log/broodsense/*.log*; do
             if [[ -f "$file" ]]; then
                 cp "$file" "$USB_PATH/" || {
                     broodsense_log warning "Failed to copy log file '$file' to USB."
