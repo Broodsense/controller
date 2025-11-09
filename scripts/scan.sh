@@ -200,10 +200,10 @@ if ! scan; then
     else
         broodsense_log info "Scan completed successfully: $OUT_PATH"
         # Allow scanner head to return to home position
-        # /usr/bin/sleep 10
+        /usr/bin/sleep 10
     fi
 else
     broodsense_log info "Scan completed successfully: $OUT_PATH"
     # Allow scanner head to return to home position
-    # /usr/bin/sleep 10
+    /usr/bin/sleep 10
 fi
