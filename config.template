@@ -24,7 +24,7 @@ study_end="{study_end}"
 # scan_resolution (dpi): Choose one of 300, 600, 1200, 2400. Recommended: 1200.
 scan_resolution={scan_resolution}
 
-# interval (min): Scan interval in minutes. To ensure each scan completes before 
+# interval (min): Scan interval in minutes. To ensure each scan completes before
 # the next scheduled startup, use intervals larger than the minimum required:
 # 300dpi: 4 minutes, 600dpi: 4 minutes, 1200dpi: 5 minutes, 2400dpi: 12 minutes.
 scan_interval={scan_interval}
@@ -37,6 +37,6 @@ scan_area={scan_area}
 
 # UPDATE: Enable code update (git pull) from online or USB source.
 # Online: connects via Wi-Fi hotspot (SSID: "broodsense", password: "broodsense").
-# Offline: clone repo with "git clone --bare <URL>" and save as controller.git in USB root.
+# Offline: clone repo with "git clone --bare https://github.com/Broodsense/controller.git" and save as controller.git in USB root.
 # If no internet, update runs from USB.
 # UPDATE=1
