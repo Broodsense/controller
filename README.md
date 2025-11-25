@@ -1,7 +1,7 @@
 # BroodSense Controller
 This repository contains the software for operating a BroodSense monitoring device, along with 3D models for printing a suitable casing for Dadant hives.
 
-![BroodSense Scanner Assembly](./broodsense_3d_models/BroodSense%20Scanner%20step%209.png)
+![BroodSense Scanner Assembly](./broodsense_3d_models/header.gif)
 
 
 # Releases
