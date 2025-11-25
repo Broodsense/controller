@@ -5,7 +5,7 @@ This repository contains the software for operating a BroodSense monitoring devi
 
 
 # Releases
-See [broodsense.com/downloads](broodsense.com/downloads) for all available software releases. A guide for installing the SD card image can be found [here](broodsense.com/diy#software).
+See [https://broodsense.com/downloads](https://broodsense.com/downloads) for all available software releases. A guide for installing the SD card image can be found [here](https://broodsense.com/diy#software).
 
 # Configure Pi
 ## Write Configuration
@@ -72,7 +72,7 @@ There is a second README for developers that want to add some customization [her
 # Good to Know
 
 ## 3D Models
-If you’re looking for printable casing components, the STL files are available in .[./broodsense_3d_models](./broodsense_3d_models/). For custom designs, refer to the Canon LiDe 300 model as a basis. You will need four M4 brass inserts, four 40 mm M4 screws, and several 10 mm wood screws. Further guidance on assembling a device is provided at broodsense.com/diy](broodsense.com/diy).
+If you’re looking for printable casing components, the STL files are available in .[./broodsense_3d_models](./broodsense_3d_models/). For custom designs, refer to the Canon LiDe 300 model as a basis. You will need four M4 brass inserts, four 40 mm M4 screws, and several 10 mm wood screws. Further guidance on assembling a device is provided at [https://broodsense.com/diy](https://broodsense.com/diy).
 
 ## Energy Consumption
 - 300dpi
