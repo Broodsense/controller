@@ -11,6 +11,10 @@
 # - DEBUG=0 (production): Copies logs and shuts down the system
 # - DEBUG=1 (debug): Copies logs but keeps system running for debugging
 
+SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "$0")")"
+source "$SCRIPT_DIR/constants.sh"
+source "$WITTY_DIR/utilities.sh"
+
 consider_shutdown() {
     # Conditionally shutdown the system based on DEBUG configuration
     # This function ensures proper cleanup and log copying before shutdown
