@@ -69,7 +69,7 @@ fi
 /bin/bash "$SCRIPT_DIR/update_repo.sh"
 
 # Handle cronjob based on is_mc_connected setting
-if [[ "${is_mc_connected:-0}" -eq 0 ]]; then
+if [[ "$(is_mc_connected)" -eq 0 ]]; then
     # Set up cronjob for periodic scanning
     CRON_ENTRY="*/${scan_interval} * * * * /home/controller/controller/scripts/scan.sh"
 

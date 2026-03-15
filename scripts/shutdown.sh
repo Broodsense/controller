@@ -38,9 +38,9 @@ consider_shutdown() {
     fi
 
     # Determine shutdown behavior based on DEBUG flag and is_mc_connected
-    if [ "${DEBUG:-0}" -eq 0 ] && [ "${is_mc_connected:-0}" -eq 1 ]; then
+    if [ "${DEBUG:-0}" -eq 0 ] && [ "$(is_mc_connected)" -eq 1 ]; then
         # Production mode with microcontroller connected: Copy logs and shutdown
-        broodsense_log info "Production mode (MC connected): Initiating shutdown sequence."
+        broodsense_log info "Initiating shutdown sequence."
         copy_logs
         poweroff
     else
