@@ -68,6 +68,27 @@ fi
 # sync repository
 /bin/bash "$SCRIPT_DIR/update_repo.sh"
 
+# Handle cronjob based on is_mc_connected setting
+if [[ "${is_mc_connected:-0}" -eq 0 ]]; then
+    # Set up cronjob for periodic scanning
+    CRON_ENTRY="*/${scan_interval} * * * * /home/controller/controller/scripts/scan.sh"
+
+    # Check if cronjob already exists
+    if ! crontab -l 2>/dev/null | grep -F "scan.sh" > /dev/null; then
+        # Add the cronjob
+        (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+        broodsense_log info "Added periodic scan cronjob: $CRON_ENTRY"
+    else
+        broodsense_log debug "Scan cronjob already exists"
+    fi
+else
+    # Remove cronjob line that contains scan.sh (if exists)
+    if crontab -l 2>/dev/null | grep -F "scan.sh" > /dev/null; then
+        crontab -l 2>/dev/null | grep -v "scan.sh" | crontab -
+        broodsense_log info "Removed scan cronjob (microcontroller connected)"
+    fi
+fi
+
 # perform scan if autostart or debug mode
 if [[ "${startup_reason:-0}" -eq 1 || "${DEBUG:-0}" -eq 1 ]]; then
 	/bin/bash "$SCRIPT_DIR/scan.sh"
