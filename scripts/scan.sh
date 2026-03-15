@@ -118,7 +118,7 @@ scan() {
     # startup_reason≠1: Manual startup or other trigger
     startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
 
-    if [ "${startup_reason:-0}" -eq 1 ]; then
+    if [ "${startup_reason:-0}" -eq 1 ] || [ "$(is_mc_connected)" -eq 0 ]; then
         # Scheduled scan: Save to timestamped file in scans directory
         OUT_PATH="$OUT_DIR/$(date +'%Y-%m-%d_%H-%M-%S').$FORMAT"
         broodsense_log debug "Scheduled scan detected - output: $OUT_PATH"
