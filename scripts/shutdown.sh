@@ -53,3 +53,28 @@ consider_shutdown() {
         copy_logs
     fi
 }
+
+
+perform_shutdown() {
+    # Set emergency shutdown trap for critical errors
+    trap 'poweroff' ERR
+
+    # Load required dependencies
+    local SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
+    source "$SCRIPT_DIR/logger.sh"
+
+    # Locate USB device and configuration
+    USB_PATH="$(find_usb)"
+    USB_CONFIG="$USB_PATH/config.env"
+
+    # Load configuration settings
+    if [ -f "$USB_CONFIG" ]; then
+        source "$USB_CONFIG"
+    else
+        broodsense_log error "Config file not found: $USB_CONFIG"
+    fi
+
+    broodsense_log info "Initiating shutdown sequence."
+    copy_logs
+    poweroff
+}

@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
 source "$SCRIPT_DIR/logger.sh"
 source "$SCRIPT_DIR/find_usb.sh"
+source "$SCRIPT_DIR/shutdown.sh"
 
 TEMPLATE="$SCRIPT_DIR/../config.template"
 DEFAULT_CONFIG="$SCRIPT_DIR/../default.env"
@@ -48,7 +49,7 @@ if [ ! -f "$USB_CONFIG" ]; then
     source "$DEFAULT_CONFIG"
     config_to_usb || exit 1
     broodsense_log info "Default config saved to $USB_CONFIG."
-    exit 1
+    perform_shutdown
 fi
 
 # Overwrite current settings with settings from USB device
