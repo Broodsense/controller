@@ -13,6 +13,7 @@
 # - Configurable scan areas (A4, A5-left, A5-right)
 # - Space monitoring to prevent USB overflow
 # - Conditional scanning based on startup reason and debug mode
+# - Lock file mechanism to prevent concurrent scans
 #
 # Scan Conditions:
 # - Regular scans: Triggered by WittyPi ALARM1 (scheduled scans)
@@ -28,8 +29,26 @@ SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/constants.sh"      # Global constants and paths
 source "$WITTY_DIR/utilities.sh"       # WittyPi utility functions
 source "$SCRIPT_DIR/logger.sh"         # Logging functions
-source "$SCRIPT_DIR/find_usb.sh"       # USB device detection
 SCANIMAGE_CONFIG="$SCRIPT_DIR/../scanimage.env"  # Scanner device cache file
+
+# Lock file logic: prevent concurrent scans, remove stale lock
+if [ -f "$LOCKFILE_SCAN" ]; then
+    lock_age=$(( $(date +%s) - $(stat -c %Y "$LOCKFILE_SCAN") ))
+    max_age=${LOCKFILE_SCAN_MAX_AGE:-3600}
+    if [ "$lock_age" -gt "$max_age" ]; then
+        broodsense_log warning "Scan lock file is stale (age ${lock_age}s > ${max_age}s), removing: $LOCKFILE_SCAN"
+        rm -f "$LOCKFILE_SCAN"
+    else
+        broodsense_log warning "Another scan script is still running (lock file exists: $LOCKFILE_SCAN, age ${lock_age}s). Exiting."
+        exit 1
+    fi
+fi
+
+# Create lock file with current PID
+echo $$ > "$LOCKFILE_SCAN"
+
+# Ensure lock file is removed on exit (normal or error)
+trap 'rm -f "$LOCKFILE_SCAN"' EXIT
 
 
 get_device() {
@@ -97,13 +116,14 @@ scan() {
 
     # Scan configuration constants
     USB_MIN_FREE_SPACE=100              # Minimum free space required (MB)
-    FORMAT=jpeg                         # Output image format
     MODE=Color                          # Scan mode (Color/Gray)
 
+
     # Setup paths and validate USB device
-    USB_PATH="$(find_usb)" || { broodsense_log info "Scan aborted, no USB storage mounted"; exit 1; }
-    USB_CONFIG="$USB_PATH/config.env"   # Configuration file path
-    OUT_DIR="$USB_PATH/scans"           # Output directory for regular scans
+    if [[ -z "$USB_PATH" ]]; then
+        broodsense_log info "Scan aborted, no USB storage mounted"
+        exit 1
+    fi
 
     if [[ ! ( -d "$USB_PATH" && -f "$USB_CONFIG" ) ]]; then
         broodsense_log warning "Scan skipped: No USB device available ($USB_PATH) or config file not found ($USB_CONFIG)."
@@ -119,8 +139,8 @@ scan() {
     startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
 
     if [ "${startup_reason:-0}" -eq 1 ] || [ "$(is_mc_connected)" -eq 0 ]; then
-        # Scheduled scan: Save to timestamped file in scans directory
-        OUT_PATH="$OUT_DIR/$(date +'%Y-%m-%d_%H-%M-%S').$FORMAT"
+        # Scheduled scan: Save to timestamped file in scans directory (UTC ISO format)
+        OUT_PATH="$SCAN_DIR/$(date -u +'%Y-%m-%dT%H-%M-%SZ').$FORMAT"
         broodsense_log debug "Scheduled scan detected - output: $OUT_PATH"
     else
         # Manual startup: Only scan if DEBUG mode is enabled
@@ -134,7 +154,7 @@ scan() {
     fi
 
     # Ensure output directory exists
-    mkdir -p "$OUT_DIR" || { broodsense_log error "Failed to create output directory $OUT_DIR."; exit 1; }
+    mkdir -p "$SCAN_DIR" || { broodsense_log error "Failed to create output directory $SCAN_DIR."; exit 1; }
 
     # Check available storage space before scanning
     available_space=$(/usr/bin/df --output=avail -m "$USB_PATH" | tail -n 1)
@@ -199,11 +219,15 @@ if ! scan; then
         exit 1
     else
         broodsense_log info "Scan completed successfully: $OUT_PATH"
+        # Upload data if LIVE_KEY is set, scan was successful and WiFi is connected
+        /bin/bash "$SCRIPT_DIR/upload.sh"
         # Allow scanner head to return to home position
         /usr/bin/sleep 10
     fi
 else
     broodsense_log info "Scan completed successfully: $OUT_PATH"
+    # Upload data if LIVE_KEY is set, scan was successful and WiFi is connected
+    /bin/bash "$SCRIPT_DIR/upload.sh"
     # Allow scanner head to return to home position
     /usr/bin/sleep 10
 fi

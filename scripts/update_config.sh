@@ -5,19 +5,20 @@
 
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 
-# Source depenencies
+# Source dependencies
 source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
 source "$SCRIPT_DIR/logger.sh"
-source "$SCRIPT_DIR/find_usb.sh"
 source "$SCRIPT_DIR/shutdown.sh"
 
 TEMPLATE="$SCRIPT_DIR/../config.template"
 DEFAULT_CONFIG="$SCRIPT_DIR/../default.env"
 
 # Find USB path
-USB_PATH="$(find_usb)" || { broodsense_log info "Config update aborted, no USB storage mounted"; exit 1; }
-USB_CONFIG="$USB_PATH/config.env"
+if [[ -z "$USB_PATH" ]]; then
+    broodsense_log info "Config update aborted, no USB storage mounted"
+    exit 1
+fi
 
 # Initially assume all values to be valid
 VALID=1
@@ -27,11 +28,24 @@ startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
 
 config_to_usb() {
     # Places current env vars into template and saves it to USB storage
+
+    # Build optional line for WIFI_SSID, WIFI_PWD and LIVE_KEY (commented out if not set)
+    local wifi_ssid_line="# WIFI_SSID="
+    local wifi_pwd_line="# WIFI_PWD="
+    local live_key_line="# LIVE_KEY=abc123"
+    [[ -n "${WIFI_SSID:-}" ]] && wifi_ssid_line="WIFI_SSID=$WIFI_SSID"
+    [[ -n "${WIFI_PWD:-}" ]]  && wifi_pwd_line="WIFI_PWD=$WIFI_PWD"
+    [[ -n "${LIVE_KEY:-}" ]]  && live_key_line="LIVE_KEY=$LIVE_KEY"
+
     sed -e "s/{study_start}/$study_start/g" \
         -e "s/{study_end}/$study_end/g" \
         -e "s/{scan_resolution}/$scan_resolution/g" \
         -e "s/{scan_interval}/$scan_interval/g" \
-        -e "s/{scan_area}/$scan_area/g" "$TEMPLATE" > "$USB_CONFIG"
+        -e "s/{scan_area}/$scan_area/g" \
+        -e "s|{WIFI_SSID}|$wifi_ssid_line|g" \
+        -e "s|{WIFI_PWD}|$wifi_pwd_line|g" \
+        -e "s|{LIVE_KEY}|$live_key_line|g" \
+        "$TEMPLATE" > "$USB_CONFIG"
 
     # Handle DEBUG flag:
     if [ "${DEBUG:-0}" -eq 1 ]; then

@@ -5,10 +5,9 @@
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "$0")")"
 source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
-
 source "$SCRIPT_DIR/logger.sh"
-source "$SCRIPT_DIR/find_usb.sh"
 source "$SCRIPT_DIR/shutdown.sh"
+source "$SCRIPT_DIR/test_internet_connection.sh"
 
 # Log startup reason
 startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
@@ -28,9 +27,6 @@ esac
 broodsense_log info ""
 broodsense_log info "Startup was caused by: $reason_str."
 
-USB_PATH="$(find_usb)"
-USB_CONFIG="$USB_PATH/config.env"
-
 # Ensure that the USB path exists, otherwise shutdown
 if [ ! -d "$USB_PATH" ]; then
     consider_shutdown
@@ -39,7 +35,7 @@ fi
 
 # Import potentially updated settings from USB storage
 /bin/bash "$SCRIPT_DIR/update_config.sh"
-if [ $? -eq 1 ]; then
+if [ $? -ne 0 ]; then
     consider_shutdown
     exit 1
 fi
@@ -55,23 +51,41 @@ source "$USB_CONFIG"
 /bin/bash "$SCRIPT_DIR/wittypi_schedule.sh"
 
 
-if [ "${DEBUG:-0}" -eq 1 ]; then
-    # enable WiFi
-    # enable / disable (autostart), start/stop (immediate)
+# WiFi configuration from USB_CONFIG (persistent, nmcli-based)
+if [[ -n "${WIFI_SSID:-}" ]]; then
+    broodsense_log info "Connecting to WiFi SSID: $WIFI_SSID"
     sudo rfkill unblock wifi
-    broodsense_log info "WiFi started due to debug mode."
+    if [[ -n "${WIFI_PWD:-}" ]]; then
+        nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PWD" 2>/dev/null
+    else
+        nmcli device wifi connect "$WIFI_SSID" 2>/dev/null
+    fi
+    # Wait for connection (timeout 15s)
+    for i in {1..15}; do
+        if nmcli -t -f WIFI g | grep -q 'enabled' && nmcli -t -f ACTIVE,SSID dev wifi | grep -q '^yes:'"$WIFI_SSID"'$'; then
+            broodsense_log info "WiFi connected to $WIFI_SSID."
+            break
+        fi
+        sleep 1
+    done
+    if ! nmcli -t -f ACTIVE,SSID dev wifi | grep -q '^yes:'"$WIFI_SSID"'$'; then
+        broodsense_log warning "WiFi connection to $WIFI_SSID failed or timed out."
+    elif ! has_internet; then
+        broodsense_log warning "WiFi connected to $WIFI_SSID but no internet access detected."
+    fi
 else
+    # disable wifi, save power
     sudo rfkill block wifi
-    broodsense_log info "WiFi disabled (default)."
+    broodsense_log info "WiFi disabled (no SSID configured)."
 fi
 
-# sync repository
+# sync repository (if UPDATE flag is set in config)
 /bin/bash "$SCRIPT_DIR/update_repo.sh"
 
 # Handle cronjob based on is_mc_connected setting
 if [[ "$(is_mc_connected)" -eq 0 ]]; then
     # Set up cronjob for periodic scanning
-    CRON_ENTRY="*/${scan_interval} * * * * /home/controller/controller/scripts/scan.sh"
+    CRON_ENTRY="*/${scan_interval} * * * * $SCRIPT_DIR/scan.sh"
 
     # Check if cronjob already exists
     if ! crontab -l 2>/dev/null | grep -F "scan.sh" > /dev/null; then

@@ -27,26 +27,13 @@ sudo apt upgrade
 
 ## Configure WiFi (If Not Set During Imaging)
 
-If WiFi was not configured during the imaging process, you can set it up manually:
-
-Edit the WiFi configuration file:
+If WiFi was not configured during the imaging process, you can set it up using `nmcli`:
 
 ```bash
-sudo nano /etc/wpa_supplicant/wpa_supplicant.conf
-```
-
-Add your network configuration:
-
-```bash
-network={
-    ssid="YOUR_NETWORK_NAME"
-    psk="YOUR_NETWORK_PASSWORD"
-    key_mgmt=WPA-PSK
-}
+sudo nmcli device wifi connect "YOUR_NETWORK_NAME" password "YOUR_NETWORK_PASSWORD"
 ```
 
 Replace `YOUR_NETWORK_NAME` and `YOUR_NETWORK_PASSWORD` with your actual WiFi credentials.
-Start your Pi.
 # 3. Set Up BroodSense Repository
 
 First, install Git if it's not already available:
@@ -227,6 +214,14 @@ sudo apt update
 sudo apt install sane-utils
 ```
 
+# 8. Install Upload Dependencies
+
+The upload script requires `curl`, `jq`, and `wireless-tools`:
+
+```bash
+sudo apt install curl jq wireless-tools
+```
+
 # 8. Install Development Utilities
 
 Install helpful development tools for system administration and debugging:
@@ -249,7 +244,8 @@ Before creating a release image, log into your Raspberry Pi and perform the foll
 sudo journalctl --disk-usage
 
 # Clear all journal logs immediately
-sudo journalctl --vacuum-size=0M
+sudo journalctl --rotate
+sudo journalctl --vacuum-size=1
 
 sudo find /var/log/ -type f -name "*.log" -exec truncate -s 0 {} \;
 sudo find /var/log/ -type f -name "*.gz" -exec rm -f {} \;

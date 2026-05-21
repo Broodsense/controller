@@ -25,6 +25,7 @@ source "$WITTY_DIR/utilities.sh"
 
 source "$SCRIPT_DIR/logger.sh"
 source "$SCRIPT_DIR/find_usb.sh"
+source "$SCRIPT_DIR/has_internet.sh"
 
 USB_PATH="$(find_usb)"
 USB_REPO="$USB_PATH/controller.git"
@@ -63,15 +64,7 @@ fi
 # ==========================================
 # If USB update fails, try updating from GitHub (requires internet connection)
 
-# Activate WiFi interface
-sudo rfkill unblock wifi
-broodsense_log debug "Activating WiFi for online repository update."
-
-# Allow time for WiFi connection to establish
-/usr/bin/sleep 5
-
-# Test internet connectivity
-if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+if has_internet; then
     # Internet is available - attempt online update
     broodsense_log debug "Internet connectivity confirmed - pulling from online repository."
     pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull 2>&1 | /usr/bin/tr '\n' ' ')
