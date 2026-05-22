@@ -88,16 +88,17 @@ filename_to_ts() {
 # Step 0: Get already uploaded timestamps from API
 broodsense_log info "Fetching already uploaded timestamps from BroodSense API..."
 RAW_TS_RESPONSE=$(curl -s --max-time 30 "$BROODSENSE_API_EXISTING_SCANS?liveKey=${LIVE_KEY}")
-if ! echo "$RAW_TS_RESPONSE" | jq -e '.allTs' >/dev/null 2>&1; then
-    broodsense_log error "Invalid or empty API response: $RAW_TS_RESPONSE"
+if ! echo "$RAW_TS_RESPONSE" | jq -e '.allTs | arrays' >/dev/null 2>&1; then
+    broodsense_log error "Invalid or missing 'allTs' array in API response: $RAW_TS_RESPONSE"
     exit 1
 fi
-UPLOADED_TS=$(echo "$RAW_TS_RESPONSE" | jq -r '.allTs[]')
 
 declare -A uploaded_map
-for ts in $UPLOADED_TS; do
+mapfile -t _uploaded_ts < <(echo "$RAW_TS_RESPONSE" | jq -r '.allTs[]')
+for ts in "${_uploaded_ts[@]}"; do
   uploaded_map[$ts]=1
 done
+broodsense_log info "Already uploaded on server: ${#_uploaded_ts[@]} scan(s)."
 
 # Step 1: Find all files in SCAN_DIR matching the pattern (newest first)
 broodsense_log info "Scanning for files to upload in $SCAN_DIR ..."
