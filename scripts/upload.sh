@@ -88,8 +88,12 @@ filename_to_ts() {
 # Step 0: Get already uploaded timestamps from API
 broodsense_log info "Fetching already uploaded timestamps from BroodSense API..."
 RAW_TS_RESPONSE=$(curl -s --max-time 30 "$BROODSENSE_API_EXISTING_SCANS?liveKey=${LIVE_KEY}")
-if ! echo "$RAW_TS_RESPONSE" | jq -e '.allTs | arrays' >/dev/null 2>&1; then
-    broodsense_log error "Invalid or missing 'allTs' array in API response: $RAW_TS_RESPONSE"
+if [[ -z "$RAW_TS_RESPONSE" ]]; then
+    broodsense_log error "Empty response from API (curl failed or server unreachable)."
+    exit 1
+fi
+if ! echo "$RAW_TS_RESPONSE" | jq -e 'has("allTs")' >/dev/null 2>&1; then
+    broodsense_log error "Invalid or missing 'allTs' key in API response: $RAW_TS_RESPONSE"
     exit 1
 fi
 
@@ -101,10 +105,14 @@ done
 broodsense_log info "Already uploaded on server: ${#_uploaded_ts[@]} scan(s)."
 
 # Step 1: Find all files in SCAN_DIR matching the pattern (newest first)
+if [[ -z "$SCAN_DIR" || ! -d "$SCAN_DIR" ]]; then
+    broodsense_log error "Scan directory not found or not set: '${SCAN_DIR}'. Is the USB device mounted?"
+    exit 1
+fi
 broodsense_log info "Scanning for files to upload in $SCAN_DIR ..."
 FILES_TO_UPLOAD=()
 shopt -s nullglob
-mapfile -t _all_files < <(ls -1t "$SCAN_DIR"/*.${FORMAT} 2>/dev/null)
+mapfile -t _all_files < <(find "$SCAN_DIR" -maxdepth 1 -name "*.${FORMAT}" -printf "%T@ %p\n" | sort -rn | awk '{print $2}')
 for f in "${_all_files[@]}"; do
   fname=$(basename "$f")
   ts=$(filename_to_ts "${fname}")
