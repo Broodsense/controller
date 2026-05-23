@@ -7,7 +7,7 @@ source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
 source "$SCRIPT_DIR/logger.sh"
 source "$SCRIPT_DIR/shutdown.sh"
-source "$SCRIPT_DIR/test_internet_connection.sh"
+source "$SCRIPT_DIR/check_internet_and_sync_time.sh"
 
 # Log startup reason
 startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
@@ -70,7 +70,7 @@ if [[ -n "${WIFI_SSID:-}" ]]; then
     done
     if ! nmcli -t -f ACTIVE,SSID dev wifi | grep -q '^yes:'"$WIFI_SSID"'$'; then
         broodsense_log warning "WiFi connection to $WIFI_SSID failed or timed out."
-    elif ! has_internet; then
+    elif ! check_internet_and_sync_time; then
         broodsense_log warning "WiFi connected to $WIFI_SSID but no internet access detected."
     fi
 else

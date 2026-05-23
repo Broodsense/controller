@@ -27,7 +27,7 @@
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/constants.sh"
 source "$SCRIPT_DIR/logger.sh"
-source "$SCRIPT_DIR/has_internet.sh"
+source "$SCRIPT_DIR/check_internet_and_sync_time.sh"
 
 # Lock file logic: prevent concurrent runs, remove stale lock
 if [ -f "$LOCKFILE_UPLOAD" ]; then
@@ -68,7 +68,7 @@ if ! iwgetid -r >/dev/null; then
 fi
 
 # Exit if no internet connection (no upload possible)
-if ! has_internet; then
+if ! check_internet_and_sync_time; then
   broodsense_log warning "No internet connectivity detected. Cannot upload scans to cloud."
   exit 0
 fi

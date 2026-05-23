@@ -11,7 +11,7 @@
 # Requirements:
 # - UPDATE=1 flag must be set in config.env
 # - For USB updates: bare git repository at USB/controller.git
-# - For online updates: WiFi network "broodsense"/"broodsense" or internet access
+# - For online updates: WiFi connection
 #
 # Update Process:
 #   1. Check UPDATE flag in configuration
@@ -25,7 +25,7 @@ source "$WITTY_DIR/utilities.sh"
 
 source "$SCRIPT_DIR/logger.sh"
 source "$SCRIPT_DIR/find_usb.sh"
-source "$SCRIPT_DIR/has_internet.sh"
+source "$SCRIPT_DIR/check_internet_and_sync_time.sh"
 
 USB_PATH="$(find_usb)"
 USB_REPO="$USB_PATH/controller.git"
@@ -64,7 +64,7 @@ fi
 # ==========================================
 # If USB update fails, try updating from GitHub (requires internet connection)
 
-if has_internet; then
+if check_internet_and_sync_time; then
     # Internet is available - attempt online update
     broodsense_log debug "Internet connectivity confirmed - pulling from online repository."
     pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull 2>&1 | /usr/bin/tr '\n' ' ')
