@@ -2,12 +2,12 @@
 # Script contains constants used across multiple scripts.
 
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
-source "$SCRIPT_DIR/find_usb.sh"       # USB device detection
+source "$SCRIPT_DIR/find_usb.sh"
 
 WITTY_DIR="/home/controller/wittypi"
-USB_PATH="$(find_usb)"               # Resolve USB mount path
-USB_CONFIG="$USB_PATH/config.env"    # Configuration file path
-SCAN_DIR="$USB_PATH/scans"           # Output directory for regular scans
+USB_PATH="$(find_usb)"
+USB_CONFIG="$USB_PATH/config.env"
+SCAN_DIR="$USB_PATH/scans"
 
 FORMAT="jpeg"
 TIMEOUT_UPLOAD=1800  # Timeout for upload operations (30min)

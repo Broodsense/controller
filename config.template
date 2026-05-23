@@ -37,14 +37,13 @@ scan_area={scan_area}
 # The device can connect to the internet using WiFi. This is useful for uploading live data
 # to the BroodSense platform using LIVE_KEY authentication or performing updates.
 #
-# To enable WiFi, set WIFI_SSID (and WIFI_PWD if required). If you change the SSID or password,
-# update these values accordingly. If you do not want to use WiFi (to save power or for offline
-# operation), comment out both WIFI_SSID and WIFI_PWD.
+# To enable WiFi, set WIFI_SSID (and WIFI_PWD if required). If you do not want to use WiFi
+# (to save power or for offline operation), comment out both WIFI_SSID and WIFI_PWD.
 {WIFI_SSID}
 {WIFI_PWD}
 
 # Provide your LIVE_KEY to automatically push new scans to the BroodSense platform.
-# The LIVE_KEY can be obtained from the settings tab inside your virtual frame on the BroodSense platform.
+# The LIVE_KEY can be obtained from the settings tab inside your virtual frame in your BroodSense account.
 {LIVE_KEY}
 
 # For developers:

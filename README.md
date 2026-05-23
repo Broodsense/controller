@@ -26,6 +26,9 @@ See [https://broodsense.com/downloads](https://broodsense.com/downloads) for all
 - **scan_resolution**: Scan resolution in dpi. Options: 300, 600, 1200, 2400. Recommended: 1200.
 - **scan_interval**: Interval between scans (minutes).
 - **scan_area**: Scan area. Options: `A4`, `A5-left`, `A5-right`.
+- **WIFI_SSID**: WiFi SSID (e.g. for software updates or automatic data upload).
+- **WIFI_PWD**: WiFi password
+- **LIVE_KEY**: Provide your LIVE_KEY to automatically push new scans to the BroodSense platform. The LIVE_KEY can be obtained from the settings tab inside your virtual frame in your BroodSense account.
 - **DEBUG**: Set to `1` to disable automatic poweroff for debugging.
 - **UPDATE**: Set to `1` to enable code updates from online or USB sources.
 
@@ -40,16 +43,17 @@ See [https://broodsense.com/downloads](https://broodsense.com/downloads) for all
 3. If no USB device is found, the device is shutdown.
 4. The settings are read from the USB device. If no settings are found, the default settings are copied to the USB device and the controller is shut down.
 5. If a config file was found, the wittyPi scheduler is configured to reflect the config (e.g. next startup time). If debug flag is set in the config, the Pi will not end this cycle but has to be powered off manually.
-6. If in debug mode, the wifi will be powered on and will connect to known WiFi networks (a wifi network (e.g. mobile hotspot) with SSID "broodsense" and password "broodsense" is hard coded and will be found).
-7. If in debug mode, the controller will try to pull the broodsense controller repository. If possible, it will try to clone from https://github.com/Broodsense/controller.git, otherwise it will try to clone from USB/.broodsense (which is a bare copy of the online git repo which can be placed on the USB using an external computer and `git clone --bare URL`).
+6. If WiFi credentials are provided in the config, the controller will try to connect to the WiFi network.
+7. If UPDATE flag is set, the controller will try to pull the broodsense controller repository. It will first try to pull from a bare repo clone on the USB device ((which can be obtained by `git clone --bare URL`)). If no such repository is found, it will then try to pull from the online repository at https://github.com/Broodsense/controller.git (requires a network connection).
 8. If the current cycle was started automatically or is in debug mode, a scan is performed with the settings from the USB device.
-9. The device is powered off, unless it's in debug mode.
-10. Logs can be found on the controller in `/var/logs/broodsense/broodsense.log` and, if possible, on the USB device in `USB/broodsense.log`.
+9. If a LIVE_KEY is provided in the config, the scan is automatically pushed to the BroodSense platform (requires a network connection).
+10. The device is powered off, unless it's in debug mode.
+11. Logs can be found on the controller in `/var/logs/broodsense/broodsense.log` and, if possible, on the USB device in `USB/broodsense.log`.
 
 # Update
 
 ## Update from Internet
-1. Create a WiFi network with SSID `broodsense` and password `broodsense` (e.g., mobile hotspot).
+1. Provide WiFi credentials in the `config.env` file on the USB device.
 2. Set `UPDATE=1` in your `config.env` file.
 3. Power on the controller.
 
@@ -61,7 +65,7 @@ If no WiFi connection is available, you can provide updates via USB:
 
 1. On an external computer with the USB device connected, run:
    ```bash
-   git clone --bare https://github.com/Broodsense/controller.git USB/controller.git
+   git clone --bare https://github.com/Broodsense/controller.git /path/to/USB/controller.git
    ```
 2. Set `UPDATE=1` in your `config.env` file.
 3. The controller will detect and use the bare repository for updates.
