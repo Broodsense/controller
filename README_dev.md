@@ -183,6 +183,8 @@ Clean up the installer file:
 rm install.sh
 ```
 
+Look for first occurence of `wittypi_home=...` and change to `wittypi_home="/home/controller/wittypi"` This allows us to source the file and re-use the utilities in our own broodsense scripts.
+
 # 6. Disable Bluetooth to Conserve Energy
 
 Disabling Bluetooth helps reduce power consumption, which is important for battery-operated deployments.
@@ -232,8 +234,95 @@ sudo apt install tmux
 
 Tmux is a terminal multiplexer that allows you to run multiple terminal sessions within a single SSH connection.
 
+# 9. Optional: Setup reverse SSH tunnel
 
-# 9. Prepare Image for Release
+For developers it might be useful to connect via SSH to controllers in the field that have (mobile) internet available. For this, a cloud server must be available where your controller can connect to.
+
+## Cloud server setup for accepting reverse SSH tunnels
+
+1. Generate a key pai on the Raspberry Pi `ssh-keygen -t ed25519 -N "" -f ~/.ssh/reverse_tunnel_key`
+2. Copy the key to your cloud server `ssh-copy-id -i ~/.ssh/reverse_tunnel_key` user@cloud_server_ip
+3. Test if the login works (Pi -> cloud server): `ssh user@cloud_server_ip`
+4. Configure cloud server keep-alives `sudo nano /etc/ssh/sshd_config` and add these lines (allowing the pi to refresh connection in case of errors):
+
+```
+ClientAliveInterval 30
+ClientAliveCountMax 3
+```
+
+5. Restart ssh on cloud server `sudo systemctl restart ssh`
+
+## Controller setup for establishing reverse SSH tunnels
+
+Install dependencies (autossh automatically monitors, manages, and restarts SSH connections or tunnels if they drop. Watchdog restarts the system in case of failures).
+
+```bash
+sudo apt install autossh watchdog
+```
+
+Create systemd service file
+```bash
+sudo nano /etc/systemd/system/reverse-ssh.service
+```
+
+Paste the following configuration (replace `user` and `cloud_server_ip`. A SSH connection on port 2222 on the cloud server will result in a connection on port 22 on the controller.):
+
+```ini
+[Unit]
+Description=AutoSSH Reverse Tunnel to Cloud Server
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Environment="AUTOSSH_GATETIME=0"
+Environment="AUTOSSH_POLL=60"
+ExecStart=/usr/bin/autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 3" -o "ExitOnForwardFailure=yes" -N -R 2222:localhost:22 user@cloud_server_ip -i /home/pi/.ssh/reverse_tunnel_key
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and restart the service so it runs automatically at boot:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable reverse-ssh.service
+sudo systemctl start reverse-ssh.service
+```
+
+As an additional safety measure we can enable the hardware watchdogs which restarts the pi in case of kernel panics / frozen system. Open the boot config
+
+```bash
+sudo nano /boot/firmware/config.txt
+```
+
+and add this line at the bottom of the hardware timer (end of file):
+
+```bash
+dtparam=watchdog=on
+```
+
+Open the watchdog config `sudo nano /etc/watchdog.conf`:
+
+```bash
+watchdog-device = /dev/watchdog
+watchdog-timeout = 15
+```
+
+Enable and start the watchdog service:
+
+```bash
+sudo systemctl enable watchdog
+sudo systemctl start watchdog
+```
+
+
+# 10. Prepare Image for Release
 
 Before creating a release image, log into your Raspberry Pi and perform the following cleanup steps to ensure no private or unnecessary data is included:
 
