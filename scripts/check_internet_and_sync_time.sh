@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# has_internet()
+# check_internet_and_sync_time()
 # --------------
 # Checks for active internet connectivity by pinging a reliable public IP address (Cloudflare DNS: 1.1.1.1).
 # Returns 0 (success) if internet is reachable, 1 (failure) otherwise.

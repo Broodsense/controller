@@ -17,11 +17,7 @@ SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 
 source "$SCRIPT_DIR/constants.sh"
 source "$SCRIPT_DIR/logger.sh"
-source "$SCRIPT_DIR/find_usb.sh"
 source "$WITTY_DIR/utilities.sh"
-
-USB_PATH="$(find_usb)"
-USB_CONFIG="$USB_PATH/config.env"
 
 # Check for config file
 if [ ! -f "$USB_CONFIG" ]; then

@@ -22,15 +22,17 @@
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "$0")")"
 source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
-
 source "$SCRIPT_DIR/logger.sh"
-source "$SCRIPT_DIR/find_usb.sh"
 source "$SCRIPT_DIR/check_internet_and_sync_time.sh"
 
-USB_PATH="$(find_usb)"
-USB_REPO="$USB_PATH/controller.git"
-USB_CONFIG="$USB_PATH/config.env"
+# Check for config file
+if [ ! -f "$USB_CONFIG" ]; then
+    broodsense_log warning "Skipping repo update script, config file is missing ($USB_CONFIG)"
+    exit 1
+fi
+
 source "$USB_CONFIG"
+
 
 if [ "${UPDATE:-0}" -eq 1 ];then
     broodsense_log info "Update flag enabled - starting repository update process."
