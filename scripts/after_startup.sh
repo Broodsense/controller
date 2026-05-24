@@ -47,10 +47,6 @@ if [ ! -f "$USB_CONFIG" ]; then
 fi
 source "$USB_CONFIG"
 
-# Generate witty schedule reflecting the current settings
-/bin/bash "$SCRIPT_DIR/wittypi_schedule.sh"
-
-
 # WiFi configuration from USB_CONFIG (persistent, nmcli-based)
 if [[ -n "${WIFI_SSID:-}" ]]; then
     broodsense_log info "Connecting to WiFi SSID: $WIFI_SSID"
@@ -78,6 +74,14 @@ else
     sudo rfkill block wifi
     broodsense_log info "WiFi disabled (no SSID configured)."
 fi
+
+# Generate witty schedule reflecting the current settings
+# NOTE: Must run AFTER WiFi/time sync so the WittyPi RTC alarm is programmed
+# with the correct (NTP-synced) time. Running it before causes the RTC alarm
+# to be set against the stale pre-sync clock, and once system_to_rtc updates
+# the RTC the WittyPi immediately fires a shutdown because the alarm appears
+# to have already elapsed.
+/bin/bash "$SCRIPT_DIR/wittypi_schedule.sh"
 
 # sync repository (if UPDATE flag is set in config)
 /bin/bash "$SCRIPT_DIR/update_repo.sh"
