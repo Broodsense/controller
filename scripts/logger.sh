@@ -66,9 +66,9 @@ copy_logs() {
     broodsense_log debug "Removed old log files, copying current log files to $USB_PATH."
 
     if [ "${DEBUG:-0}" -eq 0 ]; then
-        # Copy everything except for debug messages
+        # Copy everything except for debug messages (plain text files only)
         for file in /var/log/broodsense/*.log*; do
-            if [[ -f "$file" ]]; then
+            if [[ -f "$file" && "$file" != *.gz ]]; then
                 filename=$(basename "$file")
                 grep -vi "debug" "$file" > "$USB_PATH/$filename" || {
                     broodsense_log warning "Failed to copy log file '$file' to USB."
@@ -76,9 +76,9 @@ copy_logs() {
             fi
         done
     else
-        # Copy everything (DEBUG mode)
+        # Copy everything (DEBUG mode, plain text files only)
         for file in /var/log/broodsense/*.log*; do
-            if [[ -f "$file" ]]; then
+            if [[ -f "$file" && "$file" != *.gz ]]; then
                 cp "$file" "$USB_PATH/" || {
                     broodsense_log warning "Failed to copy log file '$file' to USB."
                 }
