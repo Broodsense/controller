@@ -113,4 +113,3 @@ if [[ "${startup_reason:-0}" -eq 1 || "${DEBUG:-0}" -eq 1 ]]; then
 fi
 
 consider_shutdown
-
