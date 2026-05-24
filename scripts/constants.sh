@@ -8,6 +8,7 @@ WITTY_DIR="/home/controller/wittypi"
 USB_PATH="$(find_usb)"
 USB_CONFIG="$USB_PATH/config.env"
 SCAN_DIR="$USB_PATH/scans"
+USB_REPO="$USB_PATH/controller.git"
 
 FORMAT="jpeg"
 TIMEOUT_UPLOAD=1800  # Timeout for upload operations (30min)

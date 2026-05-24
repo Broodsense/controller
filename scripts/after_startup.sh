@@ -112,6 +112,4 @@ if [[ "${startup_reason:-0}" -eq 1 || "${DEBUG:-0}" -eq 1 ]]; then
 	/bin/bash "$SCRIPT_DIR/scan.sh"
 fi
 
-echo "update test"
-
 consider_shutdown

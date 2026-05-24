@@ -49,8 +49,8 @@ scan_area={scan_area}
 # For developers:
 # DEBUG: Set to 1 to enable debug mode, which disables auto power-off after scan cycles.
 # Note: To access the controller via SSH, you must provide valid WiFi credentials (WIFI_SSID and WIFI_PWD)
-# in this config file. Without WiFi enabled, SSH access will not be possible. The default SSH credentials
-# are USER=controller, PWD=broodsense.
+# in this config file. Without WiFi enabled, SSH access will not be possible. Remember to turn this off
+# for deployment in the field.
 # Default is 0.
 {DEBUG}
 
