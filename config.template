@@ -52,10 +52,10 @@ scan_area={scan_area}
 # in this config file. Without WiFi enabled, SSH access will not be possible. The default SSH credentials
 # are USER=controller, PWD=broodsense.
 # Default is 0.
-# DEBUG=0
+{DEBUG}
 
 # UPDATE: Enable code update (git pull) from online or USB source.
 # Offline: Clone the repo with "git clone --bare https://github.com/Broodsense/controller.git"
 # and save as controller.git in the USB root directory.
 # Online: Connect the controller to the internet and set UPDATE=1 (recommended).
-# UPDATE=0
+{UPDATE}

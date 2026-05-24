@@ -37,6 +37,11 @@ config_to_usb() {
     [[ -n "${WIFI_PWD:-}" ]]  && wifi_pwd_line="WIFI_PWD=$WIFI_PWD"
     [[ -n "${LIVE_KEY:-}" ]]  && live_key_line="LIVE_KEY=$LIVE_KEY"
 
+    local debug_line="# DEBUG=0"
+    local update_line="# UPDATE=0"
+    [ "${DEBUG:-0}" -eq 1 ] && debug_line="DEBUG=1"
+    [ "${UPDATE:-0}" -eq 1 ] && update_line="UPDATE=1"
+
     sed -e "s/{study_start}/$study_start/g" \
         -e "s/{study_end}/$study_end/g" \
         -e "s/{scan_resolution}/$scan_resolution/g" \
@@ -45,16 +50,9 @@ config_to_usb() {
         -e "s|{WIFI_SSID}|$wifi_ssid_line|g" \
         -e "s|{WIFI_PWD}|$wifi_pwd_line|g" \
         -e "s|{LIVE_KEY}|$live_key_line|g" \
+        -e "s|{DEBUG}|$debug_line|g" \
+        -e "s|{UPDATE}|$update_line|g" \
         "$TEMPLATE" > "$USB_CONFIG"
-
-    # Handle DEBUG flag:
-    if [ "${DEBUG:-0}" -eq 1 ]; then
-        if grep -q "^# DEBUG=1" "$USB_CONFIG"; then
-            sed -i 's/^# DEBUG=1/DEBUG=1/' "$USB_CONFIG"
-        else
-            echo "DEBUG=1" >> "$USB_CONFIG"
-        fi
-    fi
 }
 
 # If no config file available, copy template with defaults
