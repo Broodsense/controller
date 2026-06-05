@@ -61,15 +61,11 @@ if [[ -z "$LIVE_KEY" ]]; then
     exit 1
 fi
 
-# Exit if no WiFi connection (no upload possible)
-if ! iwgetid -r >/dev/null; then
-  broodsense_log warning "No WiFi connection detected. Cannot upload scans to cloud."
-  exit 0
-fi
-
-# Exit if no internet connection (no upload possible)
-if ! check_internet_and_sync_time; then
-  broodsense_log warning "No internet connectivity detected. Cannot upload scans to cloud."
+# Ensure WiFi is connected and internet is reachable.
+# In always-on (cronjob) mode the connection may have dropped since startup;
+# ensure_wifi_and_internet() will attempt a reconnect when WIFI_SSID is configured.
+if ! ensure_wifi_and_internet; then
+  broodsense_log warning "No internet connectivity. Cannot upload scans to cloud."
   exit 0
 fi
 

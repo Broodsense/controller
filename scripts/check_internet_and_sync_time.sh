@@ -26,3 +26,38 @@ check_internet_and_sync_time() {
         return 1
     fi
 }
+
+ensure_wifi_and_internet() {
+    # Ensures WiFi is connected and internet is reachable. Intended for always-on
+    # mode where the connection may have dropped since startup.
+    #
+    # If WIFI_SSID is set in the environment (sourced from USB config) and WiFi is
+    # not currently associated, attempts to reconnect before checking internet.
+    # No reconnect is attempted when WIFI_SSID is unset (WiFi-disabled mode).
+    #
+    # Returns 0 if internet is reachable, 1 otherwise.
+
+    if [[ -n "${WIFI_SSID:-}" ]] && ! /usr/sbin/iwgetid -r >/dev/null 2>&1; then
+        broodsense_log info "WiFi not connected - attempting to reconnect to $WIFI_SSID"
+        sudo rfkill unblock wifi
+        if [[ -n "${WIFI_PWD:-}" ]]; then
+            nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PWD" 2>/dev/null
+        else
+            nmcli device wifi connect "$WIFI_SSID" 2>/dev/null
+        fi
+        # Wait for association (timeout 15 s)
+        for i in {1..15}; do
+            if nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep -q "^yes:${WIFI_SSID}"'$'; then
+                broodsense_log info "WiFi reconnected to $WIFI_SSID."
+                break
+            fi
+            sleep 1
+        done
+        if ! nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep -q "^yes:${WIFI_SSID}"'$'; then
+            broodsense_log warning "WiFi reconnection to $WIFI_SSID failed or timed out."
+            return 1
+        fi
+    fi
+
+    check_internet_and_sync_time
+}
