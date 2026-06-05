@@ -18,39 +18,31 @@ source "$SCRIPT_DIR/logger.sh"
 
 
 ensure_wifi_and_internet() {
-    # Primary entry point for all internet needs.
-    #
-    # Fast path: if internet is already reachable, return 0 immediately.
-    # No time sync — it was done earlier this session (or doesn't need repeating).
-    if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
-        return 0
-    fi
-
-    # Slow path: internet not reachable.
-    # If WIFI_SSID is configured, attempt to reconnect.
-    if [[ -n "${WIFI_SSID:-}" ]]; then
-        broodsense_log info "No internet - attempting to reconnect to WiFi SSID: $WIFI_SSID"
-        sudo rfkill unblock wifi
-        if [[ -n "${WIFI_PWD:-}" ]]; then
-            nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PWD" 2>/dev/null
-        else
-            nmcli device wifi connect "$WIFI_SSID" 2>/dev/null
-        fi
-        # Wait for association (timeout 15 s)
-        for i in {1..15}; do
-            if nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep -q "^yes:${WIFI_SSID}"'$'; then
-                broodsense_log info "WiFi reconnected to $WIFI_SSID."
-                break
+    # If internet is not reachable and WIFI_SSID is configured, attempt reconnect first.
+    if ! /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+        if [[ -n "${WIFI_SSID:-}" ]]; then
+            broodsense_log info "No internet - attempting to reconnect to WiFi SSID: $WIFI_SSID"
+            sudo rfkill unblock wifi
+            if [[ -n "${WIFI_PWD:-}" ]]; then
+                nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PWD" 2>/dev/null
+            else
+                nmcli device wifi connect "$WIFI_SSID" 2>/dev/null
             fi
-            sleep 1
-        done
-        if ! nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep -q "^yes:${WIFI_SSID}"'$'; then
-            broodsense_log warning "WiFi reconnection to $WIFI_SSID failed or timed out."
-            return 1
+            for i in {1..15}; do
+                if nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep -q "^yes:${WIFI_SSID}"'$'; then
+                    broodsense_log info "WiFi reconnected to $WIFI_SSID."
+                    break
+                fi
+                sleep 1
+            done
+            if ! nmcli -t -f ACTIVE,SSID dev wifi 2>/dev/null | grep -q "^yes:${WIFI_SSID}"'$'; then
+                broodsense_log warning "WiFi reconnection to $WIFI_SSID failed or timed out."
+                return 1
+            fi
         fi
     fi
 
-    # Re-check internet after reconnect attempt and sync time if now reachable.
+    # Always sync time when internet is reachable — correct clock is required for SSL.
     # system_to_rtc is skipped in always-on mode (no WittyPi) to avoid I2C errors.
     if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
         broodsense_log info "Internet available - syncing time from network."
@@ -61,7 +53,7 @@ ensure_wifi_and_internet() {
         broodsense_log info "Time sync complete: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
         return 0
     else
-        broodsense_log warning "No internet connectivity after WiFi reconnect attempt."
+        broodsense_log warning "No internet connectivity."
         return 1
     fi
 }
