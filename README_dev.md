@@ -345,6 +345,7 @@ sudo journalctl --vacuum-size=1
 sudo find /var/log/ -type f -name "*.log" -exec truncate -s 0 {} \;
 sudo find /var/log/ -type f -name "*.gz" -exec rm -f {} \;
 sudo find /var/log/ -type f -name "*.1" -exec rm -f {} \;
+sudo rm -r /var/log/broodsense/
 ```
 
 There are also logs created by WittyPi that don't need to be included in a release.
