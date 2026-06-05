@@ -24,6 +24,7 @@ source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
 source "$SCRIPT_DIR/logger.sh"
 source "$SCRIPT_DIR/check_internet_and_sync_time.sh"
+source "$SCRIPT_DIR/shutdown.sh"
 
 # Check for config file
 if [ ! -f "$USB_CONFIG" ]; then
@@ -41,6 +42,11 @@ else
     exit 0
 fi
 
+# Clear the UPDATE flag immediately so it does not re-trigger on the next boot.
+# Done before the update runs so the flag is consumed even if the update fails.
+sed -i 's/^UPDATE=1/# UPDATE=0/' "$USB_CONFIG"
+broodsense_log info "UPDATE flag cleared in $USB_CONFIG."
+
 # PRIMARY UPDATE METHOD: USB Repository
 # ======================================
 # Try to update from USB-based bare git repository first (offline method)
@@ -54,7 +60,7 @@ if [[ -n "$USB_PATH" && -d "$USB_PATH" && -d "$USB_REPO" ]]; then
     pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull "$USB_REPO" 2>&1 | /usr/bin/tr '\n' ' ')
     if [ $? -eq 0 ]; then
         broodsense_log info "Successfully updated from USB repository (commit: $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)): $pull_output"
-        exit 0
+        consider_shutdown
     else
         broodsense_log warning "USB repository update failed: $pull_output"
     fi
@@ -73,7 +79,7 @@ if check_internet_and_sync_time; then
 
     if [ $? -eq 0 ]; then
         broodsense_log info "Successfully updated from online repository (commit: $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)): $pull_output"
-        exit 0
+        consider_shutdown
     else
         broodsense_log error "Online repository update failed: $pull_output"
         exit 1
