@@ -1,9 +1,13 @@
 #!/bin/bash
 
-# check_internet_and_sync_time()
+# check_internet_and_sync_time() / ensure_wifi_and_internet()
 # --------------
-# Checks for active internet connectivity by pinging a reliable public IP address (Cloudflare DNS: 1.1.1.1).
-# Returns 0 (success) if internet is reachable, 1 (failure) otherwise.
+# check_internet_and_sync_time: checks internet connectivity by pinging Cloudflare DNS (1.1.1.1).
+#   Syncs system time from the network on success. Returns 0 if reachable, 1 otherwise.
+#
+# ensure_wifi_and_internet: reconnects WiFi if WIFI_SSID is set and the interface is not
+#   associated, then calls check_internet_and_sync_time. Used by both after_startup.sh
+#   (initial connect) and upload.sh (reconnect after potential drop in always-on mode).
 
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/constants.sh"  # Global constants and paths

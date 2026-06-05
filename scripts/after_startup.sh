@@ -49,25 +49,8 @@ source "$USB_CONFIG"
 
 # WiFi configuration from USB_CONFIG (persistent, nmcli-based)
 if [[ -n "${WIFI_SSID:-}" ]]; then
-    broodsense_log info "Connecting to WiFi SSID: $WIFI_SSID"
-    sudo rfkill unblock wifi
-    if [[ -n "${WIFI_PWD:-}" ]]; then
-        nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PWD" 2>/dev/null
-    else
-        nmcli device wifi connect "$WIFI_SSID" 2>/dev/null
-    fi
-    # Wait for connection (timeout 15s)
-    for i in {1..15}; do
-        if nmcli -t -f WIFI g | grep -q 'enabled' && nmcli -t -f ACTIVE,SSID dev wifi | grep -q '^yes:'"$WIFI_SSID"'$'; then
-            broodsense_log info "WiFi connected to $WIFI_SSID."
-            break
-        fi
-        sleep 1
-    done
-    if ! nmcli -t -f ACTIVE,SSID dev wifi | grep -q '^yes:'"$WIFI_SSID"'$'; then
-        broodsense_log warning "WiFi connection to $WIFI_SSID failed or timed out."
-    elif ! check_internet_and_sync_time; then
-        broodsense_log warning "WiFi connected to $WIFI_SSID but no internet access detected."
+    if ! ensure_wifi_and_internet; then
+        broodsense_log warning "WiFi or internet connection failed for SSID: $WIFI_SSID"
     fi
 else
     # disable wifi, save power
