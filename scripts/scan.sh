@@ -75,7 +75,7 @@ get_device() {
     fi
 
     # Perform fresh scanner detection with retry logic
-    retries=5
+    retries=3
     while (( retries >= 0 )); do
         if ! scan_device=$(/usr/bin/scanimage -L 2>/dev/null) || [[ -z "$scan_device" ]] || grep -q "No scanners were identified" <<< "$scan_device"; then
             if (( retries == 0 )); then
@@ -141,7 +141,6 @@ scan() {
     if [ "${startup_reason:-0}" -eq 1 ] || [ "$(is_mc_connected)" -eq 0 ]; then
         # Scheduled scan: Save to timestamped file in scans directory (UTC ISO format)
         OUT_PATH="$SCAN_DIR/$(date -u +'%Y-%m-%dT%H-%M-%SZ').$FORMAT"
-        broodsense_log debug "Scheduled scan detected - output: $OUT_PATH"
     else
         # Manual startup: Only scan if DEBUG mode is enabled
         if [ "${DEBUG:-0}" -eq 1 ]; then
