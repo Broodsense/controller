@@ -28,6 +28,12 @@ fi
 # Load settings from config.env
 source "$USB_CONFIG"
 
+# Skip if no WittyPi microcontroller is attached
+if [[ "$(is_mc_connected)" -eq 0 ]]; then
+    broodsense_log info "Skipping WittyPi schedule, no microcontroller connected."
+    exit 0
+fi
+
 # Remove any existing WittyPi schedules
 /usr/bin/rm -f "$WITTY_DIR"/schedule.wpi* 2>/dev/null
 
