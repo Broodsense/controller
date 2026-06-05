@@ -29,7 +29,6 @@ SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/constants.sh"      # Global constants and paths
 source "$WITTY_DIR/utilities.sh"       # WittyPi utility functions
 source "$SCRIPT_DIR/logger.sh"         # Logging functions
-SCANIMAGE_CONFIG="$SCRIPT_DIR/../scanimage.env"  # Scanner device cache file
 
 # Lock file logic: prevent concurrent scans, remove stale lock
 if [ -f "$LOCKFILE_SCAN" ]; then
