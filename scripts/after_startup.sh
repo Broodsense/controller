@@ -47,7 +47,7 @@ if [ ! -f "$USB_CONFIG" ]; then
 fi
 source "$USB_CONFIG"
 
-# WiFi configuration from USB_CONFIG (persistent, nmcli-based)
+# If given, ensure WiFi is connected and time is synced
 if [[ -n "${WIFI_SSID:-}" ]]; then
     if ! ensure_wifi_and_internet; then
         broodsense_log warning "WiFi or internet connection failed for SSID: $WIFI_SSID"
@@ -60,16 +60,13 @@ fi
 
 # Generate witty schedule reflecting the current settings
 # NOTE: Must run AFTER WiFi/time sync so the WittyPi RTC alarm is programmed
-# with the correct (NTP-synced) time. Running it before causes the RTC alarm
-# to be set against the stale pre-sync clock, and once system_to_rtc updates
-# the RTC the WittyPi immediately fires a shutdown because the alarm appears
-# to have already elapsed.
+# with the correct (NTP-synced) time.
 /bin/bash "$SCRIPT_DIR/wittypi_schedule.sh"
 
 # sync repository (if UPDATE flag is set in config)
 /bin/bash "$SCRIPT_DIR/update_repo.sh"
 
-# Handle cronjob based on is_mc_connected setting
+# Handle cronjob based on is_mc_connected setting (WittyPi present):
 if [[ "$(is_mc_connected)" -eq 0 ]]; then
     # Set up cronjob for periodic scanning
     CRON_ENTRY="*/${scan_interval} * * * * $SCRIPT_DIR/scan.sh"
@@ -86,7 +83,7 @@ else
     # Remove cronjob line that contains scan.sh (if exists)
     if crontab -l 2>/dev/null | grep -F "scan.sh" > /dev/null; then
         crontab -l 2>/dev/null | grep -v "scan.sh" | crontab -
-        broodsense_log info "Removed scan cronjob (microcontroller connected)"
+        broodsense_log info "Removed scan cronjob (WittyPi connected)"
     fi
 fi
 
