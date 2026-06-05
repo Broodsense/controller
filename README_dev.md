@@ -33,6 +33,12 @@ If WiFi was not configured during the imaging process, you can set it up using `
 sudo nmcli device wifi connect "YOUR_NETWORK_NAME" password "YOUR_NETWORK_PASSWORD"
 ```
 
+Disable WiFi Power Save for more stable connections:
+
+```bash
+sudo raspi_config # -> Advanced Options -> WLAN Power Save -> No
+```
+
 Replace `YOUR_NETWORK_NAME` and `YOUR_NETWORK_PASSWORD` with your actual WiFi credentials.
 # 3. Set Up BroodSense Repository
 
@@ -345,6 +351,81 @@ There are also logs created by WittyPi that don't need to be included in a relea
 
 ```bash
 truncate -s 0 ~/wittypi/wittyPi.log
+```
+
+Clean dev WiFi networks:
+
+```bash
+sudo rm /etc/NetworkManager/system-connections/*
+```
+
+## Remove SSH Keys and Known Hosts
+
+Remove any personal or dev SSH keys, authorized keys, and known hosts entries:
+
+```bash
+# Remove known hosts (contains fingerprints of servers you connected to during dev)
+rm ~/.ssh/known_hosts
+
+# Remove reverse tunnel key (contains private key to your cloud server)
+rm -f ~/.ssh/reverse_tunnel_key ~/.ssh/reverse_tunnel_key.pub
+
+# Remove any authorized_keys added during dev (re-add only the intended release key)
+# Review first: cat ~/.ssh/authorized_keys
+nano ~/.ssh/authorized_keys
+```
+
+## Disable or Remove the Reverse SSH Tunnel Service
+
+If the reverse SSH tunnel was set up during development but is not intended for end users, disable and remove it:
+
+```bash
+sudo systemctl disable reverse-ssh.service
+sudo systemctl stop reverse-ssh.service
+sudo rm /etc/systemd/system/reverse-ssh.service
+sudo systemctl daemon-reload
+```
+
+## Disable or Enable SSH Password Authentication
+If you want to disable password authentication for SSH (recommended for security), edit the SSH server configuration:
+
+```bash
+sudo nano /etc/ssh/sshd_config  # PasswordAuthentication no and PubkeyAuthentication yes
+```
+
+## Remove Any Active Cron Jobs
+
+Dev runs may have left behind a `scan.sh` cron entry under the controller user:
+
+```bash
+crontab -r
+```
+
+
+## Regenerate SSH Host Keys on First Boot
+
+SSH host keys uniquely identify a machine. If all released images share the same keys, any device can be impersonated. Remove them now so that new unique keys are generated automatically on first boot:
+
+```bash
+sudo rm /etc/ssh/ssh_host_*
+sudo tee /etc/rc.local > /dev/null <<'EOF'
+#!/bin/bash
+if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+    dpkg-reconfigure openssh-server
+fi
+exit 0
+EOF
+sudo chmod +x /etc/rc.local
+```
+
+## Remove /tmp Contents
+
+Clear the `/tmp` directory to remove any temporary files created during development. Also clear the bash history to avoid leaving behind any command history:
+
+```bash
+sudo rm -rf /tmp/*
+rm ~/.bash_history
+history -c
 ```
 
 ## Create the Final Image
