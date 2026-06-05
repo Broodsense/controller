@@ -72,7 +72,7 @@ fi
 # ==========================================
 # If USB update fails, try updating from GitHub (requires internet connection)
 
-if check_internet_and_sync_time; then
+if ensure_wifi_and_internet; then
     # Internet is available - attempt online update
     broodsense_log debug "Internet connectivity confirmed - pulling from online repository."
     pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull 2>&1 | /usr/bin/tr '\n' ' ')

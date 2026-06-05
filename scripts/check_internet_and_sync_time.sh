@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# check_internet_and_sync_time() / ensure_wifi_and_internet()
+# ensure_wifi_and_internet() / check_internet_and_sync_time()
 # --------------
-# check_internet_and_sync_time: checks internet connectivity by pinging Cloudflare DNS (1.1.1.1).
-#   Syncs system time from the network on success. Returns 0 if reachable, 1 otherwise.
-#
-# ensure_wifi_and_internet: reconnects WiFi if WIFI_SSID is set and the interface is not
-#   associated, then calls check_internet_and_sync_time. Used by both after_startup.sh
-#   (initial connect) and upload.sh (reconnect after potential drop in always-on mode).
+# ensure_wifi_and_internet: the primary entry point for all internet needs.
+#   Fast path: if internet is already reachable, returns 0 immediately (no time sync —
+#   it was already done earlier this session or is not needed again).
+#   Slow path: if not reachable and WIFI_SSID is set, reconnects WiFi, then syncs
+#   system time via NTP. system_to_rtc is only called when the WittyPi microcontroller
+#   is attached.
 
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/constants.sh"  # Global constants and paths
@@ -16,33 +16,20 @@ source "$SCRIPT_DIR/constants.sh"  # Global constants and paths
 source "$WITTY_DIR/utilities.sh"  # WittyPi utility functions
 source "$SCRIPT_DIR/logger.sh"
 
-check_internet_and_sync_time() {
-    # Ping Cloudflare DNS with 1 packet, 1 second timeout.
-    # If reachable, syncs system time from the network and writes it to the WittyPi RTC.
-    # Returns 0 if internet is reachable, 1 otherwise.
-    if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
-        broodsense_log info "Internet available - syncing time from network."
-        net_to_system
-        system_to_rtc
-        broodsense_log info "Time sync complete: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-        return 0
-    else
-        return 1
-    fi
-}
 
 ensure_wifi_and_internet() {
-    # Ensures WiFi is connected and internet is reachable. Intended for always-on
-    # mode where the connection may have dropped since startup.
+    # Primary entry point for all internet needs.
     #
-    # If WIFI_SSID is set in the environment (sourced from USB config) and WiFi is
-    # not currently associated, attempts to reconnect before checking internet.
-    # No reconnect is attempted when WIFI_SSID is unset (WiFi-disabled mode).
-    #
-    # Returns 0 if internet is reachable, 1 otherwise.
+    # Fast path: if internet is already reachable, return 0 immediately.
+    # No time sync — it was done earlier this session (or doesn't need repeating).
+    if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+        return 0
+    fi
 
-    if [[ -n "${WIFI_SSID:-}" ]] && ! /usr/sbin/iwgetid -r >/dev/null 2>&1; then
-        broodsense_log info "WiFi not connected - attempting to reconnect to $WIFI_SSID"
+    # Slow path: internet not reachable.
+    # If WIFI_SSID is configured, attempt to reconnect.
+    if [[ -n "${WIFI_SSID:-}" ]]; then
+        broodsense_log info "No internet - attempting to reconnect to WiFi SSID: $WIFI_SSID"
         sudo rfkill unblock wifi
         if [[ -n "${WIFI_PWD:-}" ]]; then
             nmcli device wifi connect "$WIFI_SSID" password "$WIFI_PWD" 2>/dev/null
@@ -63,5 +50,18 @@ ensure_wifi_and_internet() {
         fi
     fi
 
-    check_internet_and_sync_time
+    # Re-check internet after reconnect attempt and sync time if now reachable.
+    # system_to_rtc is skipped in always-on mode (no WittyPi) to avoid I2C errors.
+    if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+        broodsense_log info "Internet available - syncing time from network."
+        net_to_system
+        if [[ "$(is_mc_connected)" -ne 0 ]]; then
+            system_to_rtc
+        fi
+        broodsense_log info "Time sync complete: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        return 0
+    else
+        broodsense_log warning "No internet connectivity after WiFi reconnect attempt."
+        return 1
+    fi
 }
