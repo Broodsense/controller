@@ -83,18 +83,26 @@ filename_to_ts() {
 
 # Step 0: Get already uploaded timestamps from API
 broodsense_log info "Fetching already uploaded timestamps from BroodSense API..."
-RAW_TS_RESPONSE=$(curl -s --max-time 30 "$BROODSENSE_API_EXISTING_SCANS?liveKey=${LIVE_KEY}")
-if [[ -z "$RAW_TS_RESPONSE" ]]; then
-    broodsense_log error "Empty response from API (curl failed or server unreachable)."
+RAW_TS_RESPONSE=$(curl -s -L -w "\n%{http_code}" --max-time 30 "$BROODSENSE_API_EXISTING_SCANS?liveKey=${LIVE_KEY}")
+RAW_TS_BODY=$(echo "$RAW_TS_RESPONSE" | head -n -1)
+RAW_TS_CODE=$(echo "$RAW_TS_RESPONSE" | tail -n 1)
+
+if [[ "$RAW_TS_CODE" == "000" ]]; then
+    broodsense_log error "API unreachable (curl failed - DNS failure or SSL error)."
     exit 1
-fi
-if ! echo "$RAW_TS_RESPONSE" | jq -e 'has("allTs")' >/dev/null 2>&1; then
-    broodsense_log error "Invalid or missing 'allTs' key in API response: $RAW_TS_RESPONSE"
+elif [[ "$RAW_TS_CODE" -eq 404 ]]; then
+    broodsense_log error "No frame document found for liveKey '$LIVE_KEY'. Create it manually on the server first."
+    exit 1
+elif [[ "$RAW_TS_CODE" -ne 200 ]]; then
+    broodsense_log error "API returned HTTP $RAW_TS_CODE: $RAW_TS_BODY"
+    exit 1
+elif ! echo "$RAW_TS_BODY" | jq -e 'has("allTs")' >/dev/null 2>&1; then
+    broodsense_log error "Invalid API response (missing 'allTs' key): $RAW_TS_BODY"
     exit 1
 fi
 
 declare -A uploaded_map
-mapfile -t _uploaded_ts < <(echo "$RAW_TS_RESPONSE" | jq -r '.allTs[]')
+mapfile -t _uploaded_ts < <(echo "$RAW_TS_BODY" | jq -r '.allTs[]')
 for ts in "${_uploaded_ts[@]}"; do
   uploaded_map[$ts]=1
 done
