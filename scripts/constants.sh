@@ -21,3 +21,6 @@ LOCKFILE_UPLOAD="/tmp/broodsense_upload.lock"
 LOCKFILE_SCAN="/tmp/broodsense_scan.lock"
 LOCKFILE_UPLOAD_MAX_AGE=1800  # seconds (30 minutes)
 LOCKFILE_SCAN_MAX_AGE=1800  # seconds (30 minutes)
+
+# Cache file for scanner's device name (faster access on subsequent runs)
+SCANIMAGE_CONFIG="$SCRIPT_DIR/../scanimage.env"  # Scanner device cache file
