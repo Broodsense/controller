@@ -89,5 +89,6 @@ perform_shutdown() {
     trap 'poweroff' ERR
     broodsense_log info "Initiating shutdown sequence."
     copy_logs
+    sleep 2 # Ensure logs are flushed before shutdown
     poweroff
 }
