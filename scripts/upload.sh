@@ -115,6 +115,7 @@ if [[ -z "$SCAN_DIR" || ! -d "$SCAN_DIR" ]]; then
 fi
 broodsense_log info "Scanning for files to upload in $SCAN_DIR ..."
 FILES_TO_UPLOAD=()
+skipped_count=0
 shopt -s nullglob
 mapfile -t _all_files < <(find "$SCAN_DIR" -maxdepth 1 -name "*.${FORMAT}" -printf "%T@ %p\n" | sort -rn | awk '{print $2}')
 for f in "${_all_files[@]}"; do
@@ -127,15 +128,12 @@ for f in "${_all_files[@]}"; do
   if [[ -z "${uploaded_map[$ts]}" ]]; then
     FILES_TO_UPLOAD+=("$f")
   else
-    broodsense_log debug "Already uploaded: $fname (timestamp: $ts) (skipping)"
+    (( skipped_count++ ))
   fi
 done
 shopt -u nullglob
 
-broodsense_log info "Files to upload: ${#FILES_TO_UPLOAD[@]}"
-for f in "${FILES_TO_UPLOAD[@]}"; do
-  broodsense_log debug "  $(basename "$f")"
-done
+broodsense_log info "Files to upload: ${#FILES_TO_UPLOAD[@]} new, $skipped_count already uploaded (skipped)."
 
 # Step 2: Loop through files and upload each (most recent first)
 for IMAGE_FILE in "${FILES_TO_UPLOAD[@]}"; do

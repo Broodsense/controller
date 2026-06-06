@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
 source "$SCRIPT_DIR/logger.sh"
 source "$SCRIPT_DIR/shutdown.sh"
+source "$SCRIPT_DIR/check_internet_and_sync_time.sh"
 
 TEMPLATE="$SCRIPT_DIR/../config.template"
 DEFAULT_CONFIG="$SCRIPT_DIR/../default.env"
@@ -23,8 +24,12 @@ fi
 # Initially assume all values to be valid
 VALID=1
 
-# Read startup reason
-startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
+# Read startup reason (WittyPi only; default to 0 if no MC connected)
+if [[ "$(is_mc_connected)" -ne 0 ]]; then
+    startup_reason=$(bcd2dec $(/usr/sbin/i2cget -y 1 0x08 11))
+else
+    startup_reason=0
+fi
 
 config_to_usb() {
     # Places current env vars into template and saves it to USB storage
@@ -93,11 +98,14 @@ else
 fi
 
 # Validate scan_interval
-if [[ "$scan_interval" -ge "${min_interval[$scan_resolution]}" ]]; then
-    broodsense_log debug "Scan interval ($scan_interval) is valid."
-else
+if [[ "$scan_interval" -lt "${min_interval[$scan_resolution]}" ]]; then
     broodsense_log error "Invalid scan interval: Found $scan_interval, expected at least ${min_interval[$scan_resolution]}."
     VALID=0
+elif [[ "$scan_interval" -ge 60 && $(( scan_interval % 60 )) -ne 0 ]]; then
+    broodsense_log error "Invalid scan interval: $scan_interval is >= 60 minutes but not a multiple of 60 (cron field limitation)."
+    VALID=0
+else
+    broodsense_log debug "Scan interval ($scan_interval) is valid."
 fi
 
 # Validate study_start
@@ -132,45 +140,32 @@ else
     VALID=0
 fi
 
-# Validate current_time key
-if [ -n "$current_time" ]; then
+# Sync time: try NTP via WiFi first; fall back to current_time from config if internet is unavailable.
+if ensure_wifi_and_internet; then
+    broodsense_log debug "Time synced via NTP."
+elif [ -n "$current_time" ]; then
     if date -d "$current_time" &>/dev/null; then
-        broodsense_log debug "Current time ($current_time) is valid."
-        # Deactivate network sync
-        if ! sudo timedatectl set-ntp false; then
-            broodsense_log error "Failed to disable network time synchronization."
+        broodsense_log info "No internet - setting time manually from config: $current_time"
+        if ! sudo timedatectl set-time "$current_time"; then
+            broodsense_log error "Failed to set system time to $current_time."
             VALID=0
-        fi
-
-        # Set system time
-        if sudo date --set="$current_time"; then
-            broodsense_log info "System date successfully set to $current_time."
-            if command -v system_to_rtc &>/dev/null; then
+        else
+            broodsense_log info "System time set to $current_time."
+            if [[ "$(is_mc_connected)" -ne 0 ]]; then
                 if system_to_rtc; then
-                    broodsense_log info "RTC date successfully set to $current_time."
+                    broodsense_log info "RTC updated to $current_time."
                 else
-                    broodsense_log error "Failed to set RTC date to $current_time."
+                    broodsense_log error "Failed to set RTC to $current_time."
                     VALID=0
                 fi
-            else
-                broodsense_log warning "system_to_rtc function is not available. Skipping RTC update."
             fi
-        else
-            broodsense_log error "Failed to set system date to $current_time."
-            VALID=0
-        fi
-
-        # Reactivate network sync
-        if ! sudo timedatectl set-ntp true; then
-            broodsense_log error "Failed to re-enable network time synchronization."
-            VALID=0
         fi
     else
-        broodsense_log error "Invalid current time: Found $current_time, but date of ISO format 'YYYY-MM-DD HH:MM:SS' expected."
+        broodsense_log error "Invalid current_time: '$current_time' - expected format 'YYYY-MM-DD HH:MM:SS'."
         VALID=0
     fi
 else
-    broodsense_log info "Optional current_time key was not provided."
+    broodsense_log warning "No internet and no current_time set - clock may be inaccurate."
 fi
 
 # Validate DEBUG key

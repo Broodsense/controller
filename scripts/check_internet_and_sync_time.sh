@@ -1,13 +1,11 @@
 #!/bin/bash
 
-# ensure_wifi_and_internet() / check_internet_and_sync_time()
+# ensure_wifi_and_internet()
 # --------------
-# ensure_wifi_and_internet: the primary entry point for all internet needs.
-#   Fast path: if internet is already reachable, returns 0 immediately (no time sync —
-#   it was already done earlier this session or is not needed again).
-#   Slow path: if not reachable and WIFI_SSID is set, reconnects WiFi, then syncs
-#   system time via NTP. system_to_rtc is only called when the WittyPi microcontroller
-#   is attached.
+# Primary entry point for all internet needs.
+# If internet is not reachable and WIFI_SSID is set, reconnects WiFi first.
+# Once online, restarts systemd-timesyncd and blocks until the clock is synced.
+# If a WittyPi microcontroller is attached, also writes the synced time to its RTC.
 
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/constants.sh"  # Global constants and paths
@@ -43,18 +41,14 @@ ensure_wifi_and_internet() {
     fi
 
     # Always sync time when internet is reachable — correct clock is required for SSL.
-    # system_to_rtc is skipped in always-on mode (no WittyPi) to avoid I2C errors.
     if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
         broodsense_log info "Internet available - syncing time from network."
-        net_to_system
+        # Trigger NTP sync and wait until systemd confirms the clock is good.
+        sudo systemctl restart systemd-timesyncd
+        sudo /lib/systemd/systemd-time-wait-sync --one-shot
         if [[ "$(is_mc_connected)" -ne 0 ]]; then
             # WittyPi present — write synced time to its hardware RTC
             system_to_rtc
-        else
-            # No WittyPi — persist synced time to fake-hwclock so it survives power cuts
-            sudo fake-hwclock save 2>/dev/null \
-                && broodsense_log debug "System time saved to fake-hwclock." \
-                || broodsense_log warning "fake-hwclock save failed."
         fi
         broodsense_log info "Time sync complete: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
         return 0

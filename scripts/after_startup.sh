@@ -66,25 +66,28 @@ fi
 # sync repository (if UPDATE flag is set in config)
 /bin/bash "$SCRIPT_DIR/update_repo.sh"
 
-# Handle cronjob based on is_mc_connected setting (WittyPi present):
-if [[ "$(is_mc_connected)" -eq 0 ]]; then
-    # Set up cronjob for periodic scanning
-    CRON_ENTRY="*/${scan_interval} * * * * $SCRIPT_DIR/scan.sh"
+# Always remove any existing scan cronjob first to ensure the schedule
+# reflects the current scan_interval. Then re-add if no WittyPi is connected.
+crontab -l 2>/dev/null | grep -v "scan.sh" | crontab -
 
-    # Check if cronjob already exists
-    if ! crontab -l 2>/dev/null | grep -F "scan.sh" > /dev/null; then
-        # Add the cronjob
-        (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
-        broodsense_log info "Added periodic scan cronjob: $CRON_ENTRY"
+if [[ "$(is_mc_connected)" -eq 0 ]]; then
+    # Build cron schedule from scan_interval (minutes).
+    # For intervals >= 60 use the hour field to avoid the 0-59 minute field limit.
+    if (( scan_interval >= 60 )); then
+        if (( scan_interval % 60 != 0 )); then
+            broodsense_log error "scan_interval=$scan_interval is >= 60 but not a multiple of 60 - cannot express in cron. Using hourly fallback."
+            CRON_SCHEDULE="0 * * * *"
+        else
+            CRON_SCHEDULE="0 */$((scan_interval / 60)) * * *"
+        fi
     else
-        broodsense_log debug "Scan cronjob already exists"
+        CRON_SCHEDULE="*/${scan_interval} * * * *"
     fi
+    CRON_ENTRY="$CRON_SCHEDULE $SCRIPT_DIR/scan.sh"
+    (crontab -l 2>/dev/null; echo "$CRON_ENTRY") | crontab -
+    broodsense_log info "Scan cronjob set: $CRON_ENTRY"
 else
-    # Remove cronjob line that contains scan.sh (if exists)
-    if crontab -l 2>/dev/null | grep -F "scan.sh" > /dev/null; then
-        crontab -l 2>/dev/null | grep -v "scan.sh" | crontab -
-        broodsense_log info "Removed scan cronjob (WittyPi connected)"
-    fi
+    broodsense_log info "WittyPi connected - scan cronjob removed (using WittyPi schedule)."
 fi
 
 # perform scan if autostart or debug mode

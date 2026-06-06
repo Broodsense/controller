@@ -29,6 +29,7 @@ scan_resolution={scan_resolution}
 # the next scheduled startup, use intervals larger than the minimum time required for
 # a full scan cycle (values given for scanner model Canoscan LiDe 300):
 # 300dpi: 4 minutes, 600dpi: 4 minutes, 1200dpi: 5 minutes, 2400dpi: 12 minutes.
+# Note: Intervals larger than 59 minutes must be multiples of 60.
 scan_interval={scan_interval}
 
 # Scan area: Choose A4, A5-left, or A5-right. Currently only A4 is fully supported.
