@@ -14,6 +14,7 @@
 SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "$0")")"
 source "$SCRIPT_DIR/constants.sh"
 source "$WITTY_DIR/utilities.sh"
+source "$SCRIPT_DIR/logger.sh"
 
 consider_shutdown() {
     # Conditionally shutdown the system based on DEBUG configuration
@@ -21,10 +22,6 @@ consider_shutdown() {
 
     # Set emergency shutdown trap for critical errors
     trap 'poweroff' ERR
-
-    # Load required dependencies
-    local SCRIPT_DIR="$(dirname "$(/usr/bin/realpath "${BASH_SOURCE[0]}")")"
-    source "$SCRIPT_DIR/logger.sh"
 
     # Load configuration settings
     if [ -f "$USB_CONFIG" ]; then
@@ -89,6 +86,5 @@ perform_shutdown() {
     trap 'poweroff' ERR
     broodsense_log info "Initiating shutdown sequence."
     copy_logs
-    sleep 2 # Ensure logs are flushed before shutdown
     poweroff
 }
