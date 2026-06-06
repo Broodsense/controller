@@ -48,7 +48,13 @@ ensure_wifi_and_internet() {
         broodsense_log info "Internet available - syncing time from network."
         net_to_system
         if [[ "$(is_mc_connected)" -ne 0 ]]; then
+            # WittyPi present — write synced time to its hardware RTC
             system_to_rtc
+        else
+            # No WittyPi — persist synced time to fake-hwclock so it survives power cuts
+            sudo fake-hwclock save 2>/dev/null \
+                && broodsense_log debug "System time saved to fake-hwclock." \
+                || broodsense_log warning "fake-hwclock save failed."
         fi
         broodsense_log info "Time sync complete: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
         return 0
