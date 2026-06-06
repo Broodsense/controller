@@ -58,7 +58,7 @@ EOF
 /usr/bin/sleep 0.5 # Ensure no conflict with WittyPi's previous scheduler
 
 # Apply the new schedule using WittyPi's runScript.sh
-/bin/bash "$WITTY_DIR/runScript.sh" > /dev/null 2>&1
+/usr/bin/timeout 30 /bin/bash "$WITTY_DIR/runScript.sh" > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     NEXTSTARTUP=$(get_startup_time)
     broodsense_log info "WittyPi scheduler executed. Next startup: $NEXTSTARTUP"
