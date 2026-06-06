@@ -60,7 +60,7 @@ if [[ -n "$USB_PATH" && -d "$USB_PATH" && -d "$USB_REPO" ]]; then
     pull_output=$(sudo -u controller /usr/bin/git -C "$SCRIPT_DIR" pull "$USB_REPO" 2>&1 | /usr/bin/tr '\n' ' ')
     if [ $? -eq 0 ]; then
         broodsense_log info "Successfully updated from USB repository (commit: $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)): $pull_output"
-        consider_shutdown
+        perform_shutdown
     else
         broodsense_log warning "USB repository update failed: $pull_output"
     fi
@@ -79,7 +79,7 @@ if ensure_wifi_and_internet; then
 
     if [ $? -eq 0 ]; then
         broodsense_log info "Successfully updated from online repository (commit: $(git -C "$SCRIPT_DIR" rev-parse --short HEAD)): $pull_output"
-        consider_shutdown
+        perform_shutdown
     else
         broodsense_log error "Online repository update failed: $pull_output"
         exit 1
