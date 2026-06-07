@@ -406,6 +406,7 @@ Dev runs may have left behind a `scan.sh` cron entry under the controller user:
 
 ```bash
 crontab -r
+sudo crontab -r
 ```
 
 
