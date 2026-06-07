@@ -146,7 +146,13 @@ if ensure_wifi_and_internet; then
 elif [ -n "$current_time" ]; then
     if date -d "$current_time" &>/dev/null; then
         broodsense_log info "No internet - setting time manually from config: $current_time"
-        if ! sudo timedatectl set-time "$current_time"; then
+        # timedatectl set-time requires "YYYY-MM-DD HH:MM:SS" in local time.
+        # Use date -d to parse any ISO 8601 format (including T separator and timezone offsets).
+        formatted_time=$(date -d "$current_time" '+%Y-%m-%d %H:%M:%S' 2>/dev/null)
+        if [[ -z "$formatted_time" ]]; then
+            broodsense_log error "Failed to parse current_time: '$current_time'."
+            VALID=0
+        elif ! sudo timedatectl set-time "$formatted_time"; then
             broodsense_log error "Failed to set system time to $current_time."
             VALID=0
         else

@@ -4,14 +4,16 @@
 # NOTE: Blank lines or lines starting with # are ignored (comments).
 # NOTE: Do not use spaces around the equal sign.
 
-# current_time (ISO format: YYYY-MM-DDTHH:MM:SS):
-# For most use cases, the device is not connected to the internet and cannot sync time
-# automatically. This value is used to manually set the device time on first boot.
-# If present, an internal CR2032 battery will keep the time for years, even if the external
-# power supply is disconnected. Boot the device shortly after setting this value to ensure
-# an accurate time setting. If no manual time sync is intended, comment out this line
-# with the "#" symbol.
-# current_time="YYYY-MM-DDTHH:MM:SS"
+# current_time (ISO 8601: YYYY-MM-DDTHH:MM:SS+HH:MM):
+# Optional manual time override used when the device has no internet access on first boot.
+# If WIFI_SSID is configured, the device will sync time via NTP automatically and this value
+# is ignored. If no WiFi is available, set this to the current local time so that scan
+# filenames and schedules are correct. Boot the device shortly after editing this value
+# for best accuracy.
+# In WittyPi mode, time is also written to the hardware RTC (backed by a CR2032 battery),
+# which keeps the clock accurate for years even without power or internet.
+# Comment this line out once WiFi/NTP is operational.
+# current_time="YYYY-MM-DDTHH:MM:SS+02:00"
 
 # study_start (ISO format: YYYY-MM-DDTHH:MM:SS):
 # No scan will be performed before study_start.

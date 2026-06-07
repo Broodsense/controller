@@ -60,7 +60,6 @@ fi
 
 # Generate witty schedule reflecting the current settings
 # NOTE: Must run AFTER WiFi/time sync so the WittyPi RTC alarm is programmed
-# with the correct (NTP-synced) time.
 /bin/bash "$SCRIPT_DIR/wittypi_schedule.sh"
 
 # sync repository (if UPDATE flag is set in config)
