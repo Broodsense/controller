@@ -152,17 +152,20 @@ elif [ -n "$current_time" ]; then
         if [[ -z "$formatted_time" ]]; then
             broodsense_log error "Failed to parse current_time: '$current_time'."
             VALID=0
-        elif ! sudo timedatectl set-time "$formatted_time"; then
-            broodsense_log error "Failed to set system time to $current_time."
-            VALID=0
         else
-            broodsense_log info "System time set to $current_time."
-            if [[ "$(is_mc_connected)" -ne 0 ]]; then
-                if system_to_rtc; then
-                    broodsense_log info "RTC updated to $current_time."
-                else
-                    broodsense_log error "Failed to set RTC to $current_time."
-                    VALID=0
+            sudo timedatectl set-ntp false
+            if ! sudo timedatectl set-time "$formatted_time"; then
+                broodsense_log error "Failed to set system time to $current_time."
+                VALID=0
+            else
+                broodsense_log info "System time set to $current_time."
+                if [[ "$(is_mc_connected)" -ne 0 ]]; then
+                    if system_to_rtc; then
+                        broodsense_log info "RTC updated to $current_time."
+                    else
+                        broodsense_log error "Failed to set RTC to $current_time."
+                        VALID=0
+                    fi
                 fi
             fi
         fi

@@ -6,20 +6,20 @@
 
 # current_time (ISO 8601: YYYY-MM-DDTHH:MM:SS+HH:MM):
 # Optional manual time override used when the device has no internet access on first boot.
-# If WIFI_SSID is configured, the device will sync time via NTP automatically and this value
+# Note: Specify the time zone as shown in the example, e.g., use +02:00 for Berlin.
+# If WIFI_SSID is configured, the device will sync time automatically, and this value
 # is ignored. If no WiFi is available, set this to the current local time so that scan
 # filenames and schedules are correct. Boot the device shortly after editing this value
 # for best accuracy.
-# In WittyPi mode, time is also written to the hardware RTC (backed by a CR2032 battery),
-# which keeps the clock accurate for years even without power or internet.
-# Comment this line out once WiFi/NTP is operational.
+# If a Witty Pi is connected, the controller stores time in its real time clock, which keeps
+# the clock accurate for years even without power or internet.
 # current_time="YYYY-MM-DDTHH:MM:SS+02:00"
 
-# study_start (ISO format: YYYY-MM-DDTHH:MM:SS):
+# study_start (ISO 8601 format: YYYY-MM-DDTHH:MM:SS):
 # No scan will be performed before study_start.
 study_start="{study_start}"
 
-# study_end (ISO format: YYYY-MM-DDTHH:MM:SS):
+# study_end (ISO 8601 format: YYYY-MM-DDTHH:MM:SS):
 # No scan will be performed after study_end.
 study_end="{study_end}"
 

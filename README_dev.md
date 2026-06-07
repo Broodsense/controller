@@ -246,7 +246,7 @@ For developers it might be useful to connect via SSH to controllers in the field
 
 ## Cloud server setup for accepting reverse SSH tunnels
 
-1. Generate a key pai on the Raspberry Pi `ssh-keygen -t ed25519 -N "" -f ~/.ssh/reverse_tunnel_key`
+1. Generate a key pair on the Raspberry Pi `ssh-keygen -t ed25519 -N "" -f ~/.ssh/reverse_tunnel_key`
 2. Copy the key to your cloud server `ssh-copy-id -i ~/.ssh/reverse_tunnel_key` user@cloud_server_ip
 3. Test if the login works (Pi -> cloud server): `ssh user@cloud_server_ip`
 4. Configure cloud server keep-alives `sudo nano /etc/ssh/sshd_config` and add these lines (allowing the pi to refresh connection in case of errors):
@@ -284,7 +284,7 @@ Type=simple
 User=pi
 Environment="AUTOSSH_GATETIME=0"
 Environment="AUTOSSH_POLL=60"
-ExecStart=/usr/bin/autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 3" -o "ExitOnForwardFailure=yes" -N -R 2222:localhost:22 user@cloud_server_ip -i /home/pi/.ssh/reverse_tunnel_key
+ExecStart=/usr/bin/autossh -M 0 -o "ServerAliveInterval 30" -o "ServerAliveCountMax 3" -o "ExitOnForwardFailure=yes" -N -R 2222:localhost:22 user@cloud_server_ip -i /home/controller/.ssh/reverse_tunnel_key
 
 Restart=always
 RestartSec=10
@@ -358,6 +358,12 @@ Clean dev WiFi networks:
 
 ```bash
 sudo rm /etc/NetworkManager/system-connections/*
+```
+
+## Remove old mount points
+
+```bash
+sudo rm -rf /media/usb/*
 ```
 
 ## Remove SSH Keys and Known Hosts

@@ -43,7 +43,8 @@ ensure_wifi_and_internet() {
     # Always sync time when internet is reachable — correct clock is required for SSL.
     if /usr/bin/ping -q -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
         broodsense_log info "Internet available - syncing time from network."
-        # Trigger NTP sync and wait until systemd confirms the clock is good.
+        # Re-enable NTP (may have been disabled during a previous offline boot) and trigger sync.
+        sudo timedatectl set-ntp true
         sudo systemctl restart systemd-timesyncd
         sudo /lib/systemd/systemd-time-wait-sync --one-shot
         if [[ "$(is_mc_connected)" -ne 0 ]]; then
